@@ -26,6 +26,9 @@
 pragma solidity ^0.8.19;
 
 
+import {DecentralizedStableCoin}
+
+ 
 /* 
 * @title DSCEngine
 * @author Lovro Posel
@@ -35,11 +38,69 @@ pragma solidity ^0.8.19;
 * -exogenous collateral 
 *=
 
-*/
-contract DSCEngine{
+ */ 
+
+
+contract DSCEngine is {
+
+
+error DSCEngine__NeedsMoreThanZero();
+error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+
+
+
+
+
+mapping(address token => address priceFeed) private s_priceFeeds;
+
+
+
+DecentralizedStableCoin
+
+    
+    
+    modifier moreThanZero(uint256 amount){
+    if (amount == 0){
+        revert DSCEngine__NeedsMoreThanZero();
+    }
+    _;
+}
+
+
+modifier isAllowedToken(address token)
+
+
+
+
 function depositCollsteralAndMintDsc() external{}
 
-function depositCollateral() external {}
+
+
+
+function depositCollateral(address tokenCollateralAddress,
+uint256 amountCollateral)
+external moreThanZero(amountCollateral){}
+
+
+constructor(address[]memoryrokenAdresses,
+address[] memory priceFeedAddress,
+address dscAddress
+){
+
+    if(tokenAddresses.length != priceFeedAddresses.length)
+    revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+}
+
+
+for(uint256 i=0; i<tokenAddresses.length; i++){
+    s_priceFeeds[tokenAddresses[i]]= priceFeedAddresses[i];
+}
+
+}
+
+
+
+
 
 function redeemCollateral() external {}
 
