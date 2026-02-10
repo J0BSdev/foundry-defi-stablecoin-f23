@@ -98,19 +98,20 @@ nonReentrant
     s_collateralDeposited[msg.sender][tokenCollateralAddress]
     += amountCollateral;
 emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
-   boll success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
+   bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
    if (!success){
     revert DSCEngine__TransferFailed();
    }
 }
 
 
-constructor(address[]memoryrokenAdresses,
-address[] memory priceFeedAddress,
+constructor(
+address[] memory tokenAddresses,
+address[] memory priceFeedAddresses,
 address dscAddress
 ){
 
-    if(tokenAddresses.length != priceFeedAddresses.length)
+    if(tokenAddresses.length != priceFeedAddresses.length) {
     revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
 }
 
