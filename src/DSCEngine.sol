@@ -30,11 +30,12 @@ import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+
+
+
 /*
-
-
-* @title DSCEngine
-* @author Lovro Posel
+* @titl
 * @notice this is the engine that manages the DSCToken and the collateral
 *the system is designed to  be as  posible, and have the tokens mantain a 1 token == $1 PEG
 *this stablecoin has the propetrties
@@ -164,7 +165,7 @@ function _getAccountInformation(address user) private view returns
     totalDscMinted = s_DscMinted[user];
     collateralValueInUSD = getAccountCollateralValue(user);
 
-
+}
 function _healthfactor(address user) private view returns (uint256) {
 (uint256 totalDscMinted, uint256 collateralValueInUSD) = _getAccountInformation(user);
 
@@ -193,3 +194,6 @@ function getUsdValue(address token, uint256 amount) public view returns (uint256
     AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
     (, int256 price, , , ) = priceFeed.latestRoundData();
     return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+
+}
+}
