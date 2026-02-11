@@ -53,7 +53,7 @@ error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
 error DSCEngine__NotAllowedToken();
 error DSCEngine__TransferFailed();
 error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
-
+error DSCEngine__MintFailed();
 
 uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
 uint256 private constant PRECISION = 1e18;
@@ -140,18 +140,18 @@ i_dsc = DecentralizedStableCoin(dscAddress);
 }
 
 
-
+function redeemCollateralForDsc() external{}
 
 
 function redeemCollateral() external {}
 
-function mintDsc(uint256 amountDscToMint) external{
-
-function redeemCollateralForDsc(uint256) external moreThanZero(amountDscToMint)
+function mintDsc(uint256 amountDscToMint) external moreThanZero(amountDscToMint)
 nonReentrant{
 s_DscMinted[msg.sender] += amountDscToMint;
-revertIfHealthFactorIsBroken(msg.sender);
-
+_revertIfHealthFactorIsBroken(msg.sender);
+bool minted = i_dsc.mint(msg.sender,amountDscToMint);
+if (!minted){
+    revert DSCEngine__MintFailed();
 }
 
 }
@@ -179,11 +179,11 @@ uint256 collateralAdjustedForThreshold = (collateralValueInUSD * LIQUIDATION_THR
 
 
 function _revertIfHealthFactorIsBroken(address user) internal view {
-uint256 healthFactor = _healthFactor(user);
-if (userhealthFactor < MIN_HEALTH_FACTOR)
-revert DSCEngine__BreaksHealthFactor();
-
-
+uint256 userHealthFactor = _healthFactor(user);
+if (userHealthFactor < MIN_HEALTH_FACTOR) {
+revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+    }
+}
 
 function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUSD) {
 
@@ -194,7 +194,7 @@ function getAccountCollateralValue(address user) public view returns (uint256 to
         totalCollateralValueInUSD += getUsdValue(token, amount);
     }
     return totalCollateralValueInUSD;
-}
+} 
 
 
 
@@ -205,4 +205,5 @@ function getUsdValue(address token, uint256 amount) public view returns (uint256
     return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
 
 }
+
 }
