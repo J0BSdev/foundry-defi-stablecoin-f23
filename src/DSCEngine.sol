@@ -98,7 +98,7 @@ modifier isAllowedToken(address token){
 
 
 
-function depositCollsteralAndMintDsc() external{}
+function depositCollateralAndMintDsc() external{}
 
 
 

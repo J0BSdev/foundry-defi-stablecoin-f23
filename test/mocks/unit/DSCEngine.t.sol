@@ -35,11 +35,11 @@ ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
 
 
 
-    function testGetUsdValue() public {
+    function testGetUsdValue() public view{
         uint256 ethAmount = 15e18;
         uint256 expectedUsd = 30000e18;
 
-        uint256 actualUsd = dsc.getUsdValue(weth, ethAmount);
+        uint256 actualUsd = engine.getUsdValue(weth, ethAmount);
         assertEq(actualUsd, expectedUsd);
 
     }
@@ -47,11 +47,10 @@ ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
 
 function testRevertsIfCollateralZero() public{
     vm.startPrank(USER);
-    ERC20Mock(weth).approve(address(engine),AMOUNT_COLLATErAL);
+    ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
     vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
-    engine.getCollateralUsd(weth, 0);
+    engine.getUsdValue(weth, AMOUNT_COLLATERAL);
     vm.stopPrank();
+
 }
-
-
 }

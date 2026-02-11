@@ -25,7 +25,7 @@ address [] public priceFeedAddresses;
             address weth,
             address wbtc,
             uint256 deployerKey
-        ) = config.activeNetworkConfig();
+        ) = helperConfig.activeNetworkConfig();
 
 
         tokenAddresses = [weth, wbtc];
@@ -42,7 +42,7 @@ dsc.transferOwnership(address(engine));
 
 
         vm.stopBroadcast();
-        return (dsc, engine, config);
+        return (dsc, engine, helperConfig);
     }
 
  }
