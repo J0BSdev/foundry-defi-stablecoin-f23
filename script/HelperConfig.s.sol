@@ -50,7 +50,7 @@ if (block.chainid == 11155111){
         return getSepoliaEthConfig();
        }
 
-       vm.startBroadcast();
+    
 
        MockV3Aggregator wbtcUsdPriceFeed = new MockV3Aggregator(DECIMALS, BTC_USD_PRICE
        );
@@ -68,8 +68,5 @@ if (block.chainid == 11155111){
         deployerKey: DEFAULT_ANVIL_KEY
     });
 
-    vm.stopBroadcast();
-
  }
-    
  }

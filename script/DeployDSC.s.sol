@@ -16,7 +16,7 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 address [] public tokenAddresses;
 address [] public priceFeedAddresses;
 
-    function run () external returns (DecentralizedStableCoin, DSCEngine){
+    function run () external returns (DecentralizedStableCoin, DSCEngine, HelperConfig){
 
         HelperConfig helperConfig = new HelperConfig();
         (
@@ -42,7 +42,7 @@ dsc.transferOwnership(address(engine));
 
 
         vm.stopBroadcast();
-        return (dsc, engine);
+        return (dsc, engine, config);
     }
 
  }
