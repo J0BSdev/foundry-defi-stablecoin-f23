@@ -29,7 +29,7 @@ pragma solidity ^0.8.19;
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 
 
@@ -52,11 +52,14 @@ error DSCEngine__NeedsMoreThanZero();
 error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
 error DSCEngine__NotAllowedToken();
 error DSCEngine__TransferFailed();
-
+error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
 
 
 uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
 uint256 private constant PRECISION = 1e18;
+uint256 private constant LIQUIDATION_THRESHOLD = 50; // 200% overcollateralized
+uint256 private constant LIQUIDATION_PRECISION = 100;
+uint256 private constant MIN_HEALTH_FACTOR = 1 * PRECISION;
 
 
 
@@ -142,14 +145,14 @@ i_dsc = DecentralizedStableCoin(dscAddress);
 
 function redeemCollateral() external {}
 
-function mintDsc(uint256 amountDscToMint) external{}
+function mintDsc(uint256 amountDscToMint) external{
 
-function redeemCollateralForDsc() external more than zero(amountDscToMint)
+function redeemCollateralForDsc(uint256) external moreThanZero(amountDscToMint)
 nonReentrant{
 s_DscMinted[msg.sender] += amountDscToMint;
 revertIfHealthFactorIsBroken(msg.sender);
 
-
+}
 
 }
 
@@ -166,13 +169,19 @@ function _getAccountInformation(address user) private view returns
     collateralValueInUSD = getAccountCollateralValue(user);
 
 }
-function _healthfactor(address user) private view returns (uint256) {
+function _healthFactor(address user) private view returns (uint256) {
 (uint256 totalDscMinted, uint256 collateralValueInUSD) = _getAccountInformation(user);
-
-
-
+uint256 collateralAdjustedForThreshold = (collateralValueInUSD * LIQUIDATION_THRESHOLD) /
+ LIQUIDATION_PRECISION;
+ //return  (collateralValueInUSD / totalDscMinted) ;
+ return (collateralAdjustedForThreshold * PRECISION / totalDscMinted);
 }
 
+
+function _revertIfHealthFactorIsBroken(address user) internal view {
+uint256 healthFactor = _healthFactor(user);
+if (userhealthFactor < MIN_HEALTH_FACTOR)
+revert DSCEngine__BreaksHealthFactor();
 
 
 
