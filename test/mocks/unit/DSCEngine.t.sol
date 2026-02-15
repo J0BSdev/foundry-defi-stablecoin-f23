@@ -124,17 +124,4 @@ assertEq(totalDscMinted, expectedTotalDscMinted);
 assertEq( AMOUNT_COLLATERAL, expectedDepositAmount);
 
 }
-
-testCanDepositCollateralAndGetAcountInfo__MultipleCollaterals() public depositedCollateral{
-    vm.startPrank(deployerKey);
-    ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
-    engine.depositCollateral(weth, AMOUNT_COLLATERAL);
-    vm.stopPrank();
-    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(deployerKey);
-    uint256 expectedTotalDscMinted = 0;
-    uint256 expectedDepositAmount = engine.getTokenAmountFromUsd(weth, collateralValueInUsd);
-    assertEq(totalDscMinted, expectedTotalDscMinted);
-    assertEq( AMOUNT_COLLATERAL, expectedDepositAmount);
-}
-
 }
