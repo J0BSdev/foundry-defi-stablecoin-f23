@@ -33,7 +33,7 @@ uint256 public constant STARTING_USER_BALANCE = 10 ether;
 vm.deal(deployerKey, STARTING_USER_BALANCE);
 
  ERC20Mock(weth).mint(deployerKey, STARTING_USER_BALANCE);
-ERC20Mock(wbtc).mint(deployerK, STARTING_USER_BALANCE);
+ERC20Mock(wbtc).mint(deployerKey, STARTING_USER_BALANCE);
 
     }
     
