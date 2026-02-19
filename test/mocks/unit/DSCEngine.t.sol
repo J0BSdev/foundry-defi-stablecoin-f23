@@ -32,7 +32,7 @@ uint256 public constant STARTING_USER_BALANCE = 10 ether;
 (ethUsdPriceFeed,btcUsdPriceFeed, wbtc, weth,) = config.activeNetworkConfig();
 vm.deal(deployerKey, STARTING_USER_BALANCE);
 
- ERC20Mock(weth).mint(deployerKeya, STARTING_USER_BALANCE);
+ ERC20Mock(weth).mint(deployerKeyaddress, STARTING_USER_BALANCE);
 ERC20Mock(wbtc).mint(deployerKey, STARTING_USER_BALANCE);
 
     }
