@@ -109,7 +109,7 @@ modifier depositedCollateral() {
 
 
 
-function testCanDepositCollateralWithoutMinting() public depositedCollateral {
+function testCanDepositCollateralWithoutMinting( public depositedCollateral {
         uint256 userBalance = dsc.balanceOf(deployerKey);
         assertEq(userBalance, 0);
     }
