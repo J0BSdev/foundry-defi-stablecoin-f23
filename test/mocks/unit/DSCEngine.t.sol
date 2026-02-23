@@ -102,7 +102,7 @@ modifier depositedCollateral() {
     vm.stopPrank();
     _;
 }
-}
+
 
 
 function testCanDepositCollateralWithoutMinting() public depositedCollateral {
