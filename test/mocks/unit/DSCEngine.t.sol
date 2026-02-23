@@ -27,20 +27,16 @@ uint256 public constant AMOUNT_COLLATERAL = 10 ether;
 uint256 public constant STARTING_USER_BALANCE = 10 ether;
 
     function setUp() public {
-        deployer =new DeployDSC();
+        deployer = new DeployDSC();
         (dsc, engine, config) = deployer.run();
 (ethUsdPriceFeed,btcUsdPriceFeed, wbtc, weth,) = config.activeNetworkConfig();
-vm.deal(deployerKey, STARTING_USER_BALANCE);
+vm.deal(AMOUNT_COLLATERAL   , STARTING_USER_BALANCE);
 
- ERC20Mock(weth).mint(deployer, STARTING_USER_BALANCE);
-ERC20Mock(wbtc).mint(deployerKey, STARTING_USER_BALANCE);
+ ERC20Mock(weth).mint(AMOUNT_COLLATERAL, STARTING_USER_BALANCE);
+ERC20Mock(wbtc).mint(AMOUNT_COLLATERAL, STARTING_USER_BALANCE);
 
     }
     
-address[] public tokenAddresses;
-address[] public priceFeedAddresses; 
-
-
 
 function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
     tokenAddresses.push(weth);
@@ -48,7 +44,7 @@ function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
     priceFeedAddresses.push(btcUsdPriceFeed);
 
     vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
-    new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    new DSCEngine([weth], [ethUsdPriceFeed], address(dsc));
 
 }
 
