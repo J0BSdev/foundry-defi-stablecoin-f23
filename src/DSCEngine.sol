@@ -122,6 +122,8 @@ nonReentrant
 
     s_collateralDeposited[msg.sender][tokenCollateralAddress]
     += amountCollateral;
+
+    
 emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
    bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral);
    if (!success){
