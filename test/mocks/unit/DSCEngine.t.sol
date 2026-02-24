@@ -45,12 +45,12 @@ ERC20Mock(wbtc).mint(user, STARTING_USER_BALANCE);
     }
 
     address[] public tokenAddresses;
-    address[] public priceFeedAddresses;
+    address[] public feedAddresses;
 
 function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
     tokenAddresses.push(weth);
-    priceFeedAddresses.push(ethUsdPriceFeed);                                                
-    priceFeedAddresses.push(btcUsdPriceFeed);
+   feedAddresses.push(ethUsdPriceFeed);                                                
+  feedAddresses.push(btcUsdPriceFeed);
   
   vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesAmountsDontMatch.selector);
         new DSCEngine(tokenAddresses, feedAddresses, address(dsc));
