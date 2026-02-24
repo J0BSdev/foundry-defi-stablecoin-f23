@@ -52,7 +52,7 @@ function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
    feedAddresses.push(ethUsdPriceFeed);                                                
   feedAddresses.push(btcUsdPriceFeed);
   
-  vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesAmountsDontMatch.selector);
+  vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
         new DSCEngine(tokenAddresses, feedAddresses, address(dsc));
 }
 
@@ -84,7 +84,7 @@ function testGetTokenAmountFromUsd() public{
 
 
 function testRevertsIfCollateralZero() public{
-    vm.startPrank(deployerKey);
+    vm.startPrank(user);
     ERC20Mock(weth).approve(address(engine), amountCollateral);
     vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
     engine.getUsdValue(weth, amountCollateral);
@@ -95,8 +95,8 @@ function testRevertsIfCollateralZero() public{
     
     
     function testRevertsWithUnapprovedCollateral() public {
-        ERC20Mock randToken = new ERC20Mock("RAN", "RAN", deployerKey , 100e18);
-        vm.startPrank(deployerKey);
+        ERC20Mock randToken = new ERC20Mock("RAN", "RAN", user , 100e18);
+        vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__NotAllowedToken.selector, address(randToken)));
         engine.depositCollateral(address(randToken), amountCollateral);
         vm.stopPrank();
