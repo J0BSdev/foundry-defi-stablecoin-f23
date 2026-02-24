@@ -37,7 +37,10 @@ uint256 public deployerKey;
         DeployDSC deployer = new DeployDSC();
         (dsc, engine, helperConfig) = deployer.run();
 (ethUsdPriceFeed,btcUsdPriceFeed, wbtc, weth,) = helperConfig.activeNetworkConfig();
-vm.deal(user   , STARTING_USER_BALANCE);
+
+if (block.chainid == 31_337) {
+vm.deal(user , STARTING_USER_BALANCE);
+}
 
  ERC20Mock(weth).mint(user, STARTING_USER_BALANCE);
 ERC20Mock(wbtc).mint(user, STARTING_USER_BALANCE);
@@ -95,7 +98,7 @@ function testRevertsIfCollateralZero() public{
     
     
     function testRevertsWithUnapprovedCollateral() public {
-        ERC20Mock randToken = new ERC20Mock("RAN", "RAN", user , 100e18);
+        ERC20Mock randToken = new ERC20Mock();
         vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__NotAllowedToken.selector, address(randToken)));
         engine.depositCollateral(address(randToken), amountCollateral);
@@ -104,7 +107,7 @@ function testRevertsIfCollateralZero() public{
 
 
 modifier depositedCollateral() {
-    vm.startPrank(deployerKey);
+    vm.startPrank(user);
     ERC20Mock(weth).approve(address(engine), amountCollateral);
     engine.depositCollateral(weth, amountCollateral);
     vm.stopPrank();
@@ -114,14 +117,14 @@ modifier depositedCollateral() {
 
 
 function testCanDepositCollateralWithoutMinting() public depositedCollateral {
-        uint256 userBalance = dsc.balanceOf(deployerKey);
+        uint256 userBalance = dsc.balanceOf(user);
         assertEq(userBalance, 0);
     }
 
     
     
 function testCanDepositCollateralAndGetAcountInfo() public depositedCollateral{
-   (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(deployerKey);
+   (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
 uint256 expectedTotalDscMinted = 0;
 uint256 expectedDepositAmount = engine.getTokenAmountFromUsd(weth, collateralValueInUsd);
 assertEq(totalDscMinted, expectedTotalDscMinted);
