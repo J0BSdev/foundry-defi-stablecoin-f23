@@ -128,7 +128,7 @@ function testCanDepositCollateralAndGetAcountInfo() public depositedCollateral{
 uint256 expectedTotalDscMinted = 0;
 uint256 expectedDepositAmount = engine.getTokenAmountFromUsd(weth, collateralValueInUsd);
 assertEq(totalDscMinted, expectedTotalDscMinted);
-assertEq( amountCollateral, expectedDepositAmount);
+assertEq( amountCollateral, expectedDepositAmoun);
 
 }
 }
