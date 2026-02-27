@@ -57,31 +57,28 @@ function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
   
   vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
         new DSCEngine(tokenAddresses, feedAddresses, address(dsc));
+
 }
 
+
+
+function testGetTokenAmountFromUsd() public view{  
+  uint256 expectedWeth = 0.05 ether;
+        uint256 amountWeth = engine.getTokenAmountFromUsd(weth, 100 ether);
+        assertEq(amountWeth, expectedWeth);
+}
 
 
 
 function testGetUSdValue() public view{
     uint256 ethAmount = 15e18;
-    uint256 expectedUsd = 30000e18;
-    uint256 actualUsd = engine.getUsdValue(weth, ethAmount);
-    assertEq(actualUsd, expectedUsd);
+    uint256 expectedUsd = 30_000e18;
+    uint256 UsdValue = engine.getUsdValue(weth, ethAmount);
+    assertEq(UsdValue, expectedUsd);
 
 
 
-  
 }  
-
-
-
-function testGetTokenAmountFromUsd() public view{
-    uint256 usd = 100 ether;
-    uint256  expectedWeth = 0.05 ether;
-    uint256 actualWeth = engine.getTokenAmountFromUsd(weth, usd);
-    assertEq(expectedWeth, actualWeth);
-
-}
 
 
 
