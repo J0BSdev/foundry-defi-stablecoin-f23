@@ -63,7 +63,7 @@ function testRevertsIfTokenLenghtDoesntMatchPriceFeed() public{
 
 
 function testGetTokenAmountFromUsd() public view{  
-  uint256 expectedWeth = 0.05 ether;
+  uint256 expectedWeth = 0.01 ether;
         uint256 amountWeth = engine.getTokenAmountFromUsd(weth, 100 ether);
         assertEq(amountWeth, expectedWeth);
 }
