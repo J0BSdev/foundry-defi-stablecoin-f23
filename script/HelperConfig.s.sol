@@ -55,15 +55,14 @@ contract HelperConfig is Script {
         vm.stopBroadcast();
 
         // Mint tokens to msg.sender for testing purposes
-        wethMock.mint(msg.sender, 1000e8);
-        wbtcMock.mint(msg.sender, 1000e8);
+    
         // Set token names and symbols is not possible via the ERC20Mock constructor anymore, but not critical for mock use.
 
         anvilNetworkConfig = NetworkConfig({
             wethUsdPriceFeed: address(ethUsdPriceFeed), // ETH / USD
             wbtcUsdPriceFeed: address(btcUsdPriceFeed),
             weth: address(wethMock),
-            wbtc: address(wbtcMock),
+            wbtc: address(wbtcMock), 
             deployerKey: DEFAULT_ANVIL_PRIVATE_KEY
         });
     }
