@@ -272,7 +272,7 @@ if (!success){
 function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
     AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
     (, int256 price, , , ) = priceFeed.latestRoundData();
-    return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
+    return ((usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION));
 }
 
 
@@ -296,7 +296,7 @@ function getUsdValue(address token, uint256 amount) public view returns (uint256
 
     AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
     (, int256 price, , , ) = priceFeed.latestRoundData();
-    return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+    return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount * 2) / PRECISION;
 
 }
 function getAccountInformation(address user) external view returns (uint256 totalDscMinted, uint256 collateralValueInUSD) {
