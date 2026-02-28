@@ -194,9 +194,11 @@ uint256 startinUserHealthFactor = _healthFactor(user);
 if (startinUserHealthFactor >= MIN_HEALTH_FACTOR){
     revert DSCEngine__HealthFactorOk();
 }
+
+
 uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
-uint256 bonucCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonucCollateral;
+uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
 
 
 _redeemCollateral(user, msg.sender, collateral, totalCollateralToRedeem);
