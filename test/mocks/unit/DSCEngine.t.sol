@@ -95,7 +95,7 @@ function testRevertsIfCollateralZero() public{
     
     
     function testRevertsWithUnapprovedCollateral() public {
-        ERC20Mock randToken = new ERC20Mock();
+        ERC20Mock randToken = new ERC20Mock("RAN", "RAN" , msg.sender , 1000e8);
         vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__NotAllowedToken.selector, address(randToken)));
         engine.depositCollateral(address(randToken), amountCollateral);

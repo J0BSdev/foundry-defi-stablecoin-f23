@@ -273,7 +273,8 @@ function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public vie
     AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
     (, int256 price, , , ) = priceFeed.latestRoundData();
     return ((usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION));
-}
+}                    //1e38                        //1e18            //1e10
+
 
 
 
