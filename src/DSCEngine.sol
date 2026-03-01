@@ -59,13 +59,14 @@ error DSCEngine__HealthFactorNotImproved();
 
 
 
-uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
-uint256 private constant PRECISION = 1e18;
-uint256 private constant LIQUIDATION_THRESHOLD = 50; // 200% overcollateralized
-uint256 private constant LIQUIDATION_PRECISION = 100;
-uint256 private constant MIN_HEALTH_FACTOR = 1e18;
-uint256 private constant LIQUIDATION_BONUS = 10;
 
+ uint256 private constant LIQUIDATION_THRESHOLD = 50; // This means you need to be 200% over-collateralized
+    uint256 private constant LIQUIDATION_BONUS = 10; // This means you get assets at a 10% discount when liquidating
+    uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant PRECISION = 1e18;
+    uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+    uint256 private constant FEED_PRECISION = 1e8;
 
 
 mapping(address token => address priceFeed) private s_priceFeeds;
@@ -237,11 +238,6 @@ _revertIfHealthFactorIsBroken(msg.sender);
 }
 
 
-
-
-
-
-function getHealthFactor() external view {}
 
 function _getAccountInformation(address user) private view returns 
 (uint256 totalDscMinted, uint256 collateralValueInUSD) {
