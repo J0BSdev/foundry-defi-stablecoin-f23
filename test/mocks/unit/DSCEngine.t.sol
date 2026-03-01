@@ -8,6 +8,7 @@ import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol"
 import {DSCEngine} from "../../../src/DSCEngine.sol";
 import {HelperConfig} from "../../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
 
 contract DSCEngineTest is Test {
     DecentralizedStableCoin public dsc;
@@ -190,5 +191,53 @@ function testHealthFactorIsOkAfterMint() public depositedCollateral {
     assertEq(actualHealthFactor, expectedHealthFactor);
     vm.stopPrank();
 }
+function testRevertIfAmountIsZero() public {
+    vm.startPrank(user);
+    vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+    engine.redeemCollateral(weth, 0);
+    vm.stopPrank();
+}
 
+function testRedeemCollateral() public depositedCollateral {
+    vm.startPrank(user);
+    engine.redeemCollateral(weth, amountCollateral);
+    assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
+    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, 0);
+    assertEq(collateralValueInUsd, 0);
+    vm.stopPrank();
+}
+
+function testRevertIfHealthFactorIsUnderMin() public depositedCollateralAndMintedDsc {
+    vm.startPrank(user);
+    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
+    engine.redeemCollateral(weth, amountCollateral);
+    vm.stopPrank();
+
+}
+
+function testLiquidateRevertsIfHealthFactorOk() public depositedCollateralAndMintedDsc {
+    address liquidator = makeAddr("liquidator");
+    vm.startPrank(liquidator);
+    vm.expectRevert(DSCEngine.DSCEngine__HealthFactorOk.selector);
+    engine.liquidate(weth, user, amountToMint);
+    vm.stopPrank();
+}
+
+function testLiquidate() public depositedCollateralAndMintedDsc {
+       MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+    address liquidator = makeAddr("liquidator");
+    ERC20Mock(weth).mint(liquidator, amountCollateral);
+    vm.startPrank(liquidator);
+    ERC20Mock(weth).approve(address(engine), amountCollateral);
+    engine.liquidate(weth, user, amountToMint);
+    assertEq(ERC20Mock(weth).balanceOf(liquidator), 0);
+    assertEq(dsc.balanceOf(liquidator), amountToMint);
+    assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
+    assertEq(dsc.balanceOf(user), 0);
+    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, 0);
+    assertEq(collateralValueInUsd, 0);
+    vm.stopPrank();
+}
 }
