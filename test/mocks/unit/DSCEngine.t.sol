@@ -148,4 +148,47 @@ function testBurnDsc() public depositedCollateralAndMintedDsc {
 
 
 }
+
+function testRevertIfYouTryToBurnMoreThanYouHave() public depositedCollateralAndMintedDsc {
+    vm.startPrank(user);
+    dsc.approve(address(engine), amountToMint);
+    vm.expectRevert();
+    engine.burnDsc(amountToMint + 1);
+    vm.stopPrank();
+}
+
+function testRevertIfHealthFactorIsBroken() public depositedCollateral {
+    // 10 ETH x $2000 = $20,000 kolaterala
+    // $20,000 x 50% = $10,000 max DSC
+    // mintamo 10,101 DSC — iznad limita
+    uint256 amountToMintOverLimit = 10_101e18;
+    // HF = ($10,000e18 * 1e18) / 10,101e18 = 990000990000990000
+    uint256 expectedHealthFactor = 990000990000990000;
+
+    vm.startPrank(user);
+    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, expectedHealthFactor));
+    engine.mintDsc(amountToMintOverLimit);
+    vm.stopPrank();
+}
+
+function testHealthFactorIsOkAfterMint() public depositedCollateral {
+    uint256 amountToMintUnderLimit = 5_000e18;
+    // 10 ETH x $2000 = $20,000 kolaterala
+    // $20,000 x 50% = $10,000 max DSC
+    // HF = ($10,000e18 * 1e18) / 5_000e18 = 2e18
+    uint256 expectedHealthFactor = 2e18;
+
+    vm.startPrank(user);
+    engine.mintDsc(amountToMintUnderLimit);
+
+    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+    uint256 collateralAdjusted = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / 100;
+    uint256 actualHealthFactor = (collateralAdjusted * 1e18) / totalDscMinted;
+
+    assertEq(totalDscMinted, amountToMintUnderLimit);
+    assertGe(actualHealthFactor, MIN_HEALTH_FACTOR);
+    assertEq(actualHealthFactor, expectedHealthFactor);
+    vm.stopPrank();
+}
+
 }
