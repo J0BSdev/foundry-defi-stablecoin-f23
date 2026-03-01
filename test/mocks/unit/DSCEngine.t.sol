@@ -102,4 +102,26 @@ contract DSCEngineTest is Test {
         assertEq(totalDscMinted, expectedTotalDscMinted);
         assertEq(amountCollateral, expectedDepositAmount);
     }
+
+function testRevertsIfMintedDscIsZero() public {
+    vm.startPrank(user);
+    vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+    engine.mintDsc(0);
+    vm.stopPrank();
+
+    }
+function testRevertIfNotEnoughCollateral() public{
+    vm.startPrank(user);
+    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, uint256(0)));
+    engine.mintDsc(amountToMint);
+    vm.stopPrank();
+}
+
+function testMintDsc() public depositedCollateral {
+    vm.startPrank(user);
+    engine.mintDsc(amountToMint);
+    assertEq(dsc.balanceOf(user), amountToMint);
+    vm.stopPrank();
+
+}
 }
