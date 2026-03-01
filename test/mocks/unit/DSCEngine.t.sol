@@ -121,7 +121,31 @@ function testMintDsc() public depositedCollateral {
     vm.startPrank(user);
     engine.mintDsc(amountToMint);
     assertEq(dsc.balanceOf(user), amountToMint);
+    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, amountToMint);
     vm.stopPrank();
+
+}
+
+modifier depositedCollateralAndMintedDsc() {
+ vm.startPrank(user);
+        ERC20Mock(weth).approve(address(engine), amountCollateral);
+        engine.depositCollateral(weth, amountCollateral);
+        engine.mintDsc(amountToMint);
+        vm.stopPrank();
+        _;
+
+}
+
+function testBurnDsc() public depositedCollateralAndMintedDsc {
+    vm.startPrank(user);
+     dsc.approve(address(engine), amountToMint);
+     engine.burnDsc(amountToMint);
+    assertEq(dsc.balanceOf(user), 0);
+    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, 0);
+    vm.stopPrank();
+
 
 }
 }
