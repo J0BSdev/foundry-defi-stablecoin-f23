@@ -152,21 +152,38 @@ i_dsc = DecentralizedStableCoin(dscAddress);
 }
 
 
-function redeemCollateralForDsc(address tokenCollateralAddress, 
-uint256 amountCollateral, 
-uint256 amountDscToBurn) public moreThanZero(amountCollateral) 
-moreThanZero(amountDscToBurn) nonReentrant {
-}
+   function redeemCollateralForDsc(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        uint256 amountDscToBurn
+    )
+        external
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress)
+    {
+        _burnDsc(amountDscToBurn, msg.sender, msg.sender);
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
 
-
-function redeemCollateral(address tokenCollateralAddress, 
-uint256 amountCollateral) external moreThanZero(amountCollateral) nonReentrant {
-
-_redeemCollateral( msg.sender, msg.sender, tokenCollateralAddress, amountCollateral );
-_revertIfHealthFactorIsBroken(msg.sender);
-
-}
-
+    /*
+     * @param tokenCollateralAddress: The ERC20 token address of the collateral you're redeeming
+     * @param amountCollateral: The amount of collateral you're redeeming
+     * @notice This function will redeem your collateral.
+     * @notice If you have DSC minted, you will not be able to redeem until you burn your DSC
+     */
+    function redeemCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    )
+        external
+        moreThanZero(amountCollateral)
+        nonReentrant
+        isAllowedToken(tokenCollateralAddress)
+    {
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
 
 
 
@@ -188,7 +205,14 @@ _revertIfHealthFactorIsBroken(msg.sender);
 
 }
 
-function liquidate(address collateral,address user,uint256 debtToCover) external moreThanZero(debtToCover) nonReentrant(){
+function liquidate(
+address collateral,
+address user,
+uint256 debtToCover)
+ external moreThanZero(debtToCover) nonReentrant
+ isAllowedToken(collateral)
+ {
+
 
 uint256 startinUserHealthFactor = _healthFactor(user);
 if (startinUserHealthFactor >= MIN_HEALTH_FACTOR){
@@ -198,10 +222,10 @@ if (startinUserHealthFactor >= MIN_HEALTH_FACTOR){
 
 uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
 uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
 
 
-_redeemCollateral(user, msg.sender, collateral, totalCollateralToRedeem);
+
+_redeemCollateral(collateral , tokenAmountFromDebtCovered + bonusCollateral , user, msg.sender);
 _burnDsc(debtToCover, user, msg.sender);
 
 uint256 endingUserHealthFactor = _healthFactor(user);
