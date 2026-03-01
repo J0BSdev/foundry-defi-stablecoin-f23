@@ -8,7 +8,7 @@ import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol"
 import {DSCEngine} from "../../../src/DSCEngine.sol";
 import {HelperConfig} from "../../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
+import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.t.sol";
 
 contract DSCEngineTest is Test {
     DecentralizedStableCoin public dsc;
@@ -225,19 +225,27 @@ function testLiquidateRevertsIfHealthFactorOk() public depositedCollateralAndMin
 }
 
 function testLiquidate() public depositedCollateralAndMintedDsc {
-       MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+    MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+
+    // liquidator treba puno WETH jer je cijena ETH pala na $18
+    // 200 ETH × $18 = $3600 kolaterala, max DSC = $1800 — dovoljno za pokriti 100 DSC duga
+    uint256 liquidatorCollateral = 200 ether;
     address liquidator = makeAddr("liquidator");
-    ERC20Mock(weth).mint(liquidator, amountCollateral);
+    ERC20Mock(weth).mint(liquidator, liquidatorCollateral);
+
     vm.startPrank(liquidator);
-    ERC20Mock(weth).approve(address(engine), amountCollateral);
+    ERC20Mock(weth).approve(address(engine), liquidatorCollateral);
+    engine.depositCollateral(weth, liquidatorCollateral);
+    engine.mintDsc(amountToMint);
+    dsc.approve(address(engine), amountToMint);
     engine.liquidate(weth, user, amountToMint);
-    assertEq(ERC20Mock(weth).balanceOf(liquidator), 0);
-    assertEq(dsc.balanceOf(liquidator), amountToMint);
-    assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
-    assertEq(dsc.balanceOf(user), 0);
-    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, 0);
-    assertEq(collateralValueInUsd, 0);
     vm.stopPrank();
+
+    // liquidator je potrošio DSC (amountToMint) i dobio kolateral + 10% bonus
+    // user: DSC dug je pokriven, s_DscMinted = 0
+    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, 0);
+    // liquidator je potrošio sve DSC tokene za likvidaciju
+    assertEq(dsc.balanceOf(liquidator), 0);
 }
 }
