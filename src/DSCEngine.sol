@@ -82,7 +82,7 @@ DecentralizedStableCoin private immutable i_dsc;
 
 
 event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
-event CollateralRedeemed(address indexed redeemedFrom, address indexed redeemedTo, address indexed token, uint256 amount);
+event CollateralRedeemed(address indexed redeemedFrom, address indexed redeemedTo, address token, uint256 amount);
     
     
     modifier moreThanZero(uint256 amount){
@@ -162,7 +162,7 @@ i_dsc = DecentralizedStableCoin(dscAddress);
         isAllowedToken(tokenCollateralAddress)
     {
         _burnDsc(amountDscToBurn, msg.sender, msg.sender);
-        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _redeemCollateral(msg.sender , msg.sender , tokenCollateralAddress, amountCollateral);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -181,7 +181,7 @@ i_dsc = DecentralizedStableCoin(dscAddress);
         nonReentrant
         isAllowedToken(tokenCollateralAddress)
     {
-        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _redeemCollateral(msg.sender , msg.sender , tokenCollateralAddress, amountCollateral);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -225,7 +225,7 @@ uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQ
 
 
 
-_redeemCollateral(collateral , tokenAmountFromDebtCovered + bonusCollateral , user, msg.sender);
+_redeemCollateral(user , msg.sender , collateral , tokenAmountFromDebtCovered + bonusCollateral);
 _burnDsc(debtToCover, user, msg.sender);
 
 uint256 endingUserHealthFactor = _healthFactor(user);
