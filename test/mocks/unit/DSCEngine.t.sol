@@ -275,6 +275,25 @@ function testDepositCollateralAndMintDsc() public {
     assertEq(totalDscMinted, amountToMint);
     assertEq(collateralValueInUsd, 20_000e18);
 }
+ 
+function testPartialLiquidation() public depositedCollateralAndMintedDsc {
+    MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+address liquidator = makeAddr("liquidator");
+ERC20Mock(weth).approve(address(engine), 200 ether);
+vm.startPrank(liquidator);
+engine.depositCollateral(weth, 200 ether);
+engine.mintDsc(amountToMint);
+uint256 debtToCover = 100 ether;
+engine.mintDsc(debtToCover);
+dsc.approve(address(engine), debtToCover);
+engine.liquidate(weth, user , debtToCover);
+vm.stopPrank();
+
+
+
+
+
+}
 
 
 }
