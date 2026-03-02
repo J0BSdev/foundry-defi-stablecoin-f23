@@ -263,4 +263,18 @@ function testRedeemCollateralForDsc() public depositedCollateralAndMintedDsc {
 
 
 }
+
+
+function testDepositCollateralAndMintDsc() public {
+    vm.startPrank(user);
+    ERC20Mock(weth).approve(address(engine), amountCollateral);
+    engine.depositCollateralAndMintDsc(weth, amountCollateral, amountToMint);
+    vm.stopPrank();
+    assertEq(dsc.balanceOf(user), amountToMint);
+    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+    assertEq(totalDscMinted, amountToMint);
+    assertEq(collateralValueInUsd, 20_000e18);
+}
+
+
 }
