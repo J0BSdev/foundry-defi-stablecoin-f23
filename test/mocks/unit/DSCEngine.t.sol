@@ -248,4 +248,19 @@ function testLiquidate() public depositedCollateralAndMintedDsc {
     // liquidator je potrošio sve DSC tokene za likvidaciju
     assertEq(dsc.balanceOf(liquidator), 0);
 }
+
+
+function testRedeemCollateralForDsc() public depositedCollateralAndMintedDsc {
+    vm.startPrank(user);
+    dsc.approve(address(engine), amountToMint);
+    engine.redeemCollateralForDsc(weth, amountCollateral, amountToMint);
+    vm.stopPrank();
+    assertEq(dsc.balanceOf(user), 0);
+    assertEq(ERC20Mock(weth).balanceOf(user),STARTING_USER_BALANCE);
+   ( uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+   assertEq(totalDscMinted, 0);
+   assertEq(collateralValueInUsd, 0);
+
+
+}
 }
