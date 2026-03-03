@@ -285,4 +285,13 @@ contract DSCEngineTest is Test {
         assertEq(totalDscMinted, amountToMint - debtToCover);
         assertEq(dsc.balanceOf(liquidator),amountToMint);
     }
+
+function testgetAccountCollateralValue() public depositedCollateral {
+    vm.startPrank(user);
+uint256 collateralValue = engine.getAccountCollateralValue(user);
+assertEq(collateralValue, 20_000e18);
+vm.stopPrank();
+
+
+}
 }
