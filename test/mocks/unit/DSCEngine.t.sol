@@ -32,7 +32,7 @@ contract DSCEngineTest is Test {
     function setUp() public {
         DeployDSC deployer = new DeployDSC();
         (dsc, engine, helperConfig) = deployer.run();
-        (ethUsdPriceFeed, btcUsdPriceFeed, weth , wbtc,) = helperConfig.activeNetworkConfig();
+        (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc,) = helperConfig.activeNetworkConfig();
 
         if (block.chainid == 31_337) {
             vm.deal(user, STARTING_USER_BALANCE);
@@ -104,200 +104,185 @@ contract DSCEngineTest is Test {
         assertEq(amountCollateral, expectedDepositAmount);
     }
 
-function testRevertsIfMintedDscIsZero() public {
-    vm.startPrank(user);
-    vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
-    engine.mintDsc(0);
-    vm.stopPrank();
-
+    function testRevertsIfMintedDscIsZero() public {
+        vm.startPrank(user);
+        vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+        engine.mintDsc(0);
+        vm.stopPrank();
     }
-function testRevertIfNotEnoughCollateral() public{
-    vm.startPrank(user);
-    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, uint256(0)));
-    engine.mintDsc(amountToMint);
-    vm.stopPrank();
-}
 
-function testMintDsc() public depositedCollateral {
-    vm.startPrank(user);
-    engine.mintDsc(amountToMint);
-    assertEq(dsc.balanceOf(user), amountToMint);
-    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, amountToMint);
-    vm.stopPrank();
+    function testRevertIfNotEnoughCollateral() public {
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, uint256(0)));
+        engine.mintDsc(amountToMint);
+        vm.stopPrank();
+    }
 
-}
+    function testMintDsc() public depositedCollateral {
+        vm.startPrank(user);
+        engine.mintDsc(amountToMint);
+        assertEq(dsc.balanceOf(user), amountToMint);
+        (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, amountToMint);
+        vm.stopPrank();
+    }
 
-modifier depositedCollateralAndMintedDsc() {
- vm.startPrank(user);
+    modifier depositedCollateralAndMintedDsc() {
+        vm.startPrank(user);
         ERC20Mock(weth).approve(address(engine), amountCollateral);
         engine.depositCollateral(weth, amountCollateral);
         engine.mintDsc(amountToMint);
         vm.stopPrank();
         _;
+    }
 
-}
+    function testBurnDsc() public depositedCollateralAndMintedDsc {
+        vm.startPrank(user);
+        dsc.approve(address(engine), amountToMint);
+        engine.burnDsc(amountToMint);
+        assertEq(dsc.balanceOf(user), 0);
+        (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, 0);
+        vm.stopPrank();
+    }
 
-function testBurnDsc() public depositedCollateralAndMintedDsc {
-    vm.startPrank(user);
-     dsc.approve(address(engine), amountToMint);
-     engine.burnDsc(amountToMint);
-    assertEq(dsc.balanceOf(user), 0);
-    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, 0);
-    vm.stopPrank();
+    function testRevertIfYouTryToBurnMoreThanYouHave() public depositedCollateralAndMintedDsc {
+        vm.startPrank(user);
+        dsc.approve(address(engine), amountToMint);
+        vm.expectRevert();
+        engine.burnDsc(amountToMint + 1);
+        vm.stopPrank();
+    }
 
+    function testRevertIfHealthFactorIsBroken() public depositedCollateral {
+        // 10 ETH x $2000 = $20,000 kolaterala
+        // $20,000 x 50% = $10,000 max DSC
+        // mintamo 10,101 DSC — iznad limita
+        uint256 amountToMintOverLimit = 10_101e18;
+        // HF = ($10,000e18 * 1e18) / 10,101e18 = 990000990000990000
+        uint256 expectedHealthFactor = 990000990000990000;
 
-}
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, expectedHealthFactor));
+        engine.mintDsc(amountToMintOverLimit);
+        vm.stopPrank();
+    }
 
-function testRevertIfYouTryToBurnMoreThanYouHave() public depositedCollateralAndMintedDsc {
-    vm.startPrank(user);
-    dsc.approve(address(engine), amountToMint);
-    vm.expectRevert();
-    engine.burnDsc(amountToMint + 1);
-    vm.stopPrank();
-}
+    function testHealthFactorIsOkAfterMint() public depositedCollateral {
+        uint256 amountToMintUnderLimit = 5_000e18;
+        // 10 ETH x $2000 = $20,000 kolaterala
+        // $20,000 x 50% = $10,000 max DSC
+        // HF = ($10,000e18 * 1e18) / 5_000e18 = 2e18
+        uint256 expectedHealthFactor = 2e18;
 
-function testRevertIfHealthFactorIsBroken() public depositedCollateral {
-    // 10 ETH x $2000 = $20,000 kolaterala
-    // $20,000 x 50% = $10,000 max DSC
-    // mintamo 10,101 DSC — iznad limita
-    uint256 amountToMintOverLimit = 10_101e18;
-    // HF = ($10,000e18 * 1e18) / 10,101e18 = 990000990000990000
-    uint256 expectedHealthFactor = 990000990000990000;
+        vm.startPrank(user);
+        engine.mintDsc(amountToMintUnderLimit);
 
-    vm.startPrank(user);
-    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, expectedHealthFactor));
-    engine.mintDsc(amountToMintOverLimit);
-    vm.stopPrank();
-}
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+        uint256 collateralAdjusted = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / 100;
+        uint256 actualHealthFactor = (collateralAdjusted * 1e18) / totalDscMinted;
 
-function testHealthFactorIsOkAfterMint() public depositedCollateral {
-    uint256 amountToMintUnderLimit = 5_000e18;
-    // 10 ETH x $2000 = $20,000 kolaterala
-    // $20,000 x 50% = $10,000 max DSC
-    // HF = ($10,000e18 * 1e18) / 5_000e18 = 2e18
-    uint256 expectedHealthFactor = 2e18;
+        assertEq(totalDscMinted, amountToMintUnderLimit);
+        assertGe(actualHealthFactor, MIN_HEALTH_FACTOR);
+        assertEq(actualHealthFactor, expectedHealthFactor);
+        vm.stopPrank();
+    }
 
-    vm.startPrank(user);
-    engine.mintDsc(amountToMintUnderLimit);
+    function testRevertIfAmountIsZero() public {
+        vm.startPrank(user);
+        vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+        engine.redeemCollateral(weth, 0);
+        vm.stopPrank();
+    }
 
-    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
-    uint256 collateralAdjusted = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / 100;
-    uint256 actualHealthFactor = (collateralAdjusted * 1e18) / totalDscMinted;
+    function testRedeemCollateral() public depositedCollateral {
+        vm.startPrank(user);
+        engine.redeemCollateral(weth, amountCollateral);
+        assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, 0);
+        assertEq(collateralValueInUsd, 0);
+        vm.stopPrank();
+    }
 
-    assertEq(totalDscMinted, amountToMintUnderLimit);
-    assertGe(actualHealthFactor, MIN_HEALTH_FACTOR);
-    assertEq(actualHealthFactor, expectedHealthFactor);
-    vm.stopPrank();
-}
-function testRevertIfAmountIsZero() public {
-    vm.startPrank(user);
-    vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
-    engine.redeemCollateral(weth, 0);
-    vm.stopPrank();
-}
+    function testRevertIfHealthFactorIsUnderMin() public depositedCollateralAndMintedDsc {
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
+        engine.redeemCollateral(weth, amountCollateral);
+        vm.stopPrank();
+    }
 
-function testRedeemCollateral() public depositedCollateral {
-    vm.startPrank(user);
-    engine.redeemCollateral(weth, amountCollateral);
-    assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
-    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, 0);
-    assertEq(collateralValueInUsd, 0);
-    vm.stopPrank();
-}
+    function testLiquidateRevertsIfHealthFactorOk() public depositedCollateralAndMintedDsc {
+        address liquidator = makeAddr("liquidator");
+        vm.startPrank(liquidator);
+        vm.expectRevert(DSCEngine.DSCEngine__HealthFactorOk.selector);
+        engine.liquidate(weth, user, amountToMint);
+        vm.stopPrank();
+    }
 
-function testRevertIfHealthFactorIsUnderMin() public depositedCollateralAndMintedDsc {
-    vm.startPrank(user);
-    vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
-    engine.redeemCollateral(weth, amountCollateral);
-    vm.stopPrank();
+    function testLiquidate() public depositedCollateralAndMintedDsc {
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
 
-}
+        // liquidator treba puno WETH jer je cijena ETH pala na $18
+        // 200 ETH × $18 = $3600 kolaterala, max DSC = $1800 — dovoljno za pokriti 100 DSC duga
+        uint256 liquidatorCollateral = 200 ether;
+        address liquidator = makeAddr("liquidator");
+        ERC20Mock(weth).mint(liquidator, liquidatorCollateral);
 
-function testLiquidateRevertsIfHealthFactorOk() public depositedCollateralAndMintedDsc {
-    address liquidator = makeAddr("liquidator");
-    vm.startPrank(liquidator);
-    vm.expectRevert(DSCEngine.DSCEngine__HealthFactorOk.selector);
-    engine.liquidate(weth, user, amountToMint);
-    vm.stopPrank();
-}
+        vm.startPrank(liquidator);
+        ERC20Mock(weth).approve(address(engine), liquidatorCollateral);
+        engine.depositCollateral(weth, liquidatorCollateral);
+        engine.mintDsc(amountToMint);
+        dsc.approve(address(engine), amountToMint);
+        engine.liquidate(weth, user, amountToMint);
+        vm.stopPrank();
 
-function testLiquidate() public depositedCollateralAndMintedDsc {
-    MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+        // liquidator je potrošio DSC (amountToMint) i dobio kolateral + 10% bonus
+        // user: DSC dug je pokriven, s_DscMinted = 0
+        (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, 0);
+        // liquidator je potrošio sve DSC tokene za likvidaciju
+        assertEq(dsc.balanceOf(liquidator), 0);
+    }
 
-    // liquidator treba puno WETH jer je cijena ETH pala na $18
-    // 200 ETH × $18 = $3600 kolaterala, max DSC = $1800 — dovoljno za pokriti 100 DSC duga
-    uint256 liquidatorCollateral = 200 ether;
-    address liquidator = makeAddr("liquidator");
-    ERC20Mock(weth).mint(liquidator, liquidatorCollateral);
+    function testRedeemCollateralForDsc() public depositedCollateralAndMintedDsc {
+        vm.startPrank(user);
+        dsc.approve(address(engine), amountToMint);
+        engine.redeemCollateralForDsc(weth, amountCollateral, amountToMint);
+        vm.stopPrank();
+        assertEq(dsc.balanceOf(user), 0);
+        assertEq(ERC20Mock(weth).balanceOf(user), STARTING_USER_BALANCE);
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, 0);
+        assertEq(collateralValueInUsd, 0);
+    }
 
-    vm.startPrank(liquidator);
-    ERC20Mock(weth).approve(address(engine), liquidatorCollateral);
-    engine.depositCollateral(weth, liquidatorCollateral);
-    engine.mintDsc(amountToMint);
-    dsc.approve(address(engine), amountToMint);
-    engine.liquidate(weth, user, amountToMint);
-    vm.stopPrank();
+    function testDepositCollateralAndMintDsc() public {
+        vm.startPrank(user);
+        ERC20Mock(weth).approve(address(engine), amountCollateral);
+        engine.depositCollateralAndMintDsc(weth, amountCollateral, amountToMint);
+        vm.stopPrank();
+        assertEq(dsc.balanceOf(user), amountToMint);
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, amountToMint);
+        assertEq(collateralValueInUsd, 20_000e18);
+    }
 
-    // liquidator je potrošio DSC (amountToMint) i dobio kolateral + 10% bonus
-    // user: DSC dug je pokriven, s_DscMinted = 0
-    (uint256 totalDscMinted,) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, 0);
-    // liquidator je potrošio sve DSC tokene za likvidaciju
-    assertEq(dsc.balanceOf(liquidator), 0);
-}
-
-
-function testRedeemCollateralForDsc() public depositedCollateralAndMintedDsc {
-    vm.startPrank(user);
-    dsc.approve(address(engine), amountToMint);
-    engine.redeemCollateralForDsc(weth, amountCollateral, amountToMint);
-    vm.stopPrank();
-    assertEq(dsc.balanceOf(user), 0);
-    assertEq(ERC20Mock(weth).balanceOf(user),STARTING_USER_BALANCE);
-   ( uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
-   assertEq(totalDscMinted, 0);
-   assertEq(collateralValueInUsd, 0);
-
-
-}
-
-
-function testDepositCollateralAndMintDsc() public {
-    vm.startPrank(user);
-    ERC20Mock(weth).approve(address(engine), amountCollateral);
-    engine.depositCollateralAndMintDsc(weth, amountCollateral, amountToMint);
-    vm.stopPrank();
-    assertEq(dsc.balanceOf(user), amountToMint);
-    (uint256 totalDscMinted, uint256 collateralValueInUsd) = engine.getAccountInformation(user);
-    assertEq(totalDscMinted, amountToMint);
-    assertEq(collateralValueInUsd, 20_000e18);
-
-
-}
- 
-
-function testPartialLiquidation() public depositedCollateralAndMintedDsc {
-    MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
-address liquidator = makeAddr("liquidator");
-vm.startPrank(liquidator);
-ERC20Mock(weth).approve(address(engine), 200 ether);
-engine.depositCollateral(weth, 200 ether);
-engine.mintDsc(amountToMint);
-uint256 debtToCover = 50 ether;
-engine.mintDsc(debtToCover);
-dsc.approve(address(engine), debtToCover);
-engine.liquidate(weth, user , debtToCover);
-vm.stopPrank();
-(uint256 totalDscMinted,) = engine.getAccountInformation(user);
-assertEq(totalDscMinted , amountToMint - debtToCover);
-assertEq(dsc.balanceOf(liquidator), debtToCover);
-
-
-
-}
-
-
+    function testPartialLiquidation() public depositedCollateralAndMintedDsc {
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(18e8); // cijena pada na $18
+        address liquidator = makeAddr("liquidator");
+        ERC20Mock(weth).mint(liquidator, 200 ether);
+        vm.startPrank(liquidator);
+        ERC20Mock(weth).approve(address(engine), 200 ether);
+        engine.depositCollateral(weth, 200 ether);
+        uint256 debtToCover = 50 ether;
+        engine.mintDsc(amountToMint);
+        engine.mintDsc(debtToCover);
+        dsc.approve(address(engine), debtToCover);
+        engine.liquidate(weth, user, debtToCover);
+        vm.stopPrank();
+        (uint256 totalDscMinted,) = engine.getAccountInformation(user);
+        assertEq(totalDscMinted, amountToMint - debtToCover);
+        assertEq(dsc.balanceOf(liquidator),amountToMint);
+    }
 }
