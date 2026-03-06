@@ -117,7 +117,7 @@ contract DSCEngine is ReentrancyGuard {
         external
         moreThanZero(amountCollateral)
         nonReentrant
-        isAllowedToken(tokenCollateralAddress)
+        isAllowedToken(tokenCollateralAddress
     {
         _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
         _revertIfHealthFactorIsBroken(msg.sender);
