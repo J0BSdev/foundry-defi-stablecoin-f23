@@ -154,7 +154,7 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
     }
 
-    function testRevertIfHealthFactorIsBroken() public depositedCollateral {
+    function testRevertIfHealthFactorIsBroken() public depositedCollatera {
         // 10 ETH x $2000 = $20,000 kolaterala
         // $20,000 x 50% = $10,000 max DSC
         // mintamo 10,101 DSC — iznad limita
