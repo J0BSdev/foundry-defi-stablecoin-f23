@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.18;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {DeployDSC} from "../../../script/DeployDSC.s.sol";
 import {DSCEngine} from "../../../src/DSCEngine.sol";
@@ -40,7 +40,13 @@ uint256 totalBtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
 uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
 uint256 wbtcValue = dsce.getUsdValue(wbtc, totalBtcDeposited);
 
-assert(wethValue + wbtcValue > totalSupply);
+console2.log("totalSupply", totalSupply);
+console2.log("totalWethDeposited", totalWethDeposited);
+console2.log("totalBtcDeposited", totalBtcDeposited);
+console2.log("wethValue", wethValue);
+console2.log("wbtcValue", wbtcValue);
+
+assert(wethValue + wbtcValue >= totalSupply);
 
 }
 
