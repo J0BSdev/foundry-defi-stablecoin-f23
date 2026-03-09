@@ -18,23 +18,31 @@ contract OpenInvariantTest is StdInvariant, Test{
     DSCEngine dsce;
     HelperConfig config;
     DecentralizedStableCoin dsc;
-    IERC20 weth;
-    IERC20 btc;
+    address weth;
+    address wbtc;
 
 
 
 function setUp() external {
 deployer = new DeployDSC();
 (dsc, dsce, config) = deployer.run();
-(, , weth, btc,) = helperConfig.activeNetworkConfig()
+(, , weth, wbtc,) = config.activeNetworkConfig();
 targetContract(address(dsce));
 
 }
 
 function invariant_protoclMustHaveMoreValueThanTotalSupply() public view {
+uint256 totalSupply = dsc.totalSupply();
+uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
+uint256 totalBtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
 
 
+uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
+uint256 wbtcValue = dsce.getUsdValue(wbtc, totalBtcDeposited);
 
+assert(wethValue + wbtcValue > totalSupply);
+
+}
 
 
 
