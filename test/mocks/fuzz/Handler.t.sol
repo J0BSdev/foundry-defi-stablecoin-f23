@@ -30,15 +30,27 @@ contract Handler is Test {
         wbtc = ERC20Mock(collateralTokens[1]);
     }
 
-    function depositCollateral(address collateral, uint256 collateralSeed, uint256 amountCollateral) public {
+    function depositCollateral( uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
 amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
+
+
 
 vm.startPrank(msg.sender);
 collateralToken.mint(msg.sender, amountCollateral);
 collateralToken.approve(address(dsce), amountCollateral);
         dsce.depositCollateral(address(collateralToken), amountCollateral);
         vm.stopPrank();
+    }
+
+
+    function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
+        uint256 maxCollateralToRedeem = dscEngine.getCollateralBalanceOfUser
+      
+
+
+
     }
 
     function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
