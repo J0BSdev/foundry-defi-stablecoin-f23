@@ -46,12 +46,22 @@ collateralToken.approve(address(dsce), amountCollateral);
 
     function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
-        uint256 maxCollateralToRedeem = dscEngine.getCollateralBalanceOfUser
-      
+        uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateralToken), msg.sender);
+        amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
+if (amountCollateral == 0) {
+    return;
+}
+        dsce.redeemCollateral(address(collateralToken), amountCollateral);
 
 
 
     }
+
+      
+
+
+
+    
 
     function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
 
