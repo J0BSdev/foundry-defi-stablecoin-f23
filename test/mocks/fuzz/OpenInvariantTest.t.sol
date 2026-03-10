@@ -11,9 +11,7 @@ import {HelperConfig} from "../../../script/HelperConfig.s.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Handler} from "./Handler.t.sol";
 
-
-
-contract OpenInvariantTest is StdInvariant, Test{
+contract OpenInvariantTest is StdInvariant, Test {
     DeployDSC deployer;
     DSCEngine dsce;
     HelperConfig config;
@@ -22,37 +20,29 @@ contract OpenInvariantTest is StdInvariant, Test{
     address wbtc;
     Handler handler;
 
+    function setUp() external {
+        deployer = new DeployDSC();
+        (dsc, dsce, config) = deployer.run();
+        (,, weth, wbtc,) = config.activeNetworkConfig();
+        handler = new Handler(dsce, dsc);
+        targetContract(address(handler));
+        //targetContract(address(dsce));
+    }
 
-function setUp() external {
-deployer = new DeployDSC();
-(dsc, dsce, config) = deployer.run();
-(, , weth, wbtc,) = config.activeNetworkConfig();
-handler = new Handler(dsce, dsc);
-targetContract(address(handler));
-//targetContract(address(dsce));
+    function invariant_protoclMustHaveMoreValueThanTotalSupply() public view {
+        uint256 totalSupply = dsc.totalSupply();
+        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
+        uint256 totalBtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
 
-}
+        uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
+        uint256 wbtcValue = dsce.getUsdValue(wbtc, totalBtcDeposited);
 
-function invariant_protoclMustHaveMoreValueThanTotalSupply() public view {
-uint256 totalSupply = dsc.totalSupply();
-uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
-uint256 totalBtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
+        console2.log("totalSupply", totalSupply);
+        console2.log("totalWethDeposited", totalWethDeposited);
+        console2.log("totalBtcDeposited", totalBtcDeposited);
+        console2.log("wethValue", wethValue);
+        console2.log("wbtcValue", wbtcValue);
 
-
-uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
-uint256 wbtcValue = dsce.getUsdValue(wbtc, totalBtcDeposited);
-
-console2.log("totalSupply", totalSupply);
-console2.log("totalWethDeposited", totalWethDeposited);
-console2.log("totalBtcDeposited", totalBtcDeposited);
-console2.log("wethValue", wethValue);
-console2.log("wbtcValue", wbtcValue);
-
-assert(wethValue + wbtcValue >= totalSupply);
-
-}
-
-
-
-
+        assert(wethValue + wbtcValue >= totalSupply);
+    }
 }

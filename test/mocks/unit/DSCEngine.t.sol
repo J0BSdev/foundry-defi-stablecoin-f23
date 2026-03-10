@@ -283,15 +283,13 @@ contract DSCEngineTest is Test {
         vm.stopPrank();
         (uint256 totalDscMinted,) = engine.getAccountInformation(user);
         assertEq(totalDscMinted, amountToMint - debtToCover);
-        assertEq(dsc.balanceOf(liquidator),amountToMint);
+        assertEq(dsc.balanceOf(liquidator), amountToMint);
     }
 
-function testgetAccountCollateralValue() public depositedCollateral {
-    vm.startPrank(user);
-uint256 collateralValue = engine.getAccountCollateralValue(user);
-assertEq(collateralValue, 20_000e18);
-vm.stopPrank();
-
-
-}
+    function testgetAccountCollateralValue() public depositedCollateral {
+        vm.startPrank(user);
+        uint256 collateralValue = engine.getAccountCollateralValue(user);
+        assertEq(collateralValue, 20_000e18);
+        vm.stopPrank();
+    }
 }
