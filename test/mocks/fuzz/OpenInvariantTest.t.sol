@@ -45,4 +45,13 @@ contract OpenInvariantTest is StdInvariant, Test {
         console2.log("timesMintIsCalled", handler.timesMintIsCalled());
         assert(wethValue + wbtcValue >= totalSupply);
     }
+
+
+function invariants_gettersShouldNotRevert()public view{
+   dsce.getTokenAmountFromUsd(weth, 1000000000000000000);
+   dsce.getTokenAmountFromUsd(wbtc, 1000000000000000000);
+   dsce.getUsdValue(weth, 1000000000000000000);
+   dsce.getUsdValue(wbtc, 1000000000000000000);
+
+}
 }
