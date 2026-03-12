@@ -30,6 +30,18 @@ contract Handler is Test {
         wbtc = ERC20Mock(collateralTokens[1]);
     }
 
+function mintDsc(uint256 amount) public{
+ amount = bound(amount, 1, MAX_DEPOSIT_SIZE);
+vm.startPrank(msg.sender);
+dsc.mint(msg.sender, amount);
+vm.stopPrank();
+
+
+}
+
+
+
+
     function depositCollateral( uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
 amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
