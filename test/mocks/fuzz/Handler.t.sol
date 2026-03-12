@@ -29,6 +29,10 @@ contract Handler is Test {
     }
 
     function mintDsc(uint256 amount, uint256 addressSeed) public {
+
+        if (usersWithCollateralDeposited.length == 0) {
+            return;
+        }
         address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
         (uint256 totalDscMinted, uint256 collateralValueInUSD) = dsce.getAccountInformation(sender);
         int256 maxDscToMint = (int256(collateralValueInUSD) / 2) - int256(totalDscMinted);
