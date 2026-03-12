@@ -7,19 +7,17 @@ import {DSCEngine} from "../../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
-
-
-
 contract Handler is Test {
     DSCEngine dsce;
     DecentralizedStableCoin dsc;
 
-
     ERC20Mock weth;
     ERC20Mock wbtc;
 
-    uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
+    uint256 public timesMintIsCalled;
+    address[] public usersWithCollateralDeposited;
 
+    uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 
     constructor(DSCEngine _dscEngine, DecentralizedStableCoin _dsc) {
         dsce = _dscEngine;
@@ -30,64 +28,48 @@ contract Handler is Test {
         wbtc = ERC20Mock(collateralTokens[1]);
     }
 
-function mintDsc(uint256 amount) public{
-vm.startPrank(msg.sender);
-(uint256 totalDscMinted, uint256 collateralValueInUSD) = dsce.getAccountInformation(msg.sender);
-int256 maxDscToMint = (int256(collateralValueInUSD) / 2) - int256(totalDscMinted);
-if (maxDscToMint < 0) {
-    return;
-}
+    function mintDsc(uint256 amount, uint256 addressSeed) public {
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+        (uint256 totalDscMinted, uint256 collateralValueInUSD) = dsce.getAccountInformation(sender);
+        int256 maxDscToMint = (int256(collateralValueInUSD) / 2) - int256(totalDscMinted);
+        if (maxDscToMint < 0) {
+            return;
+        }
 
-amount = bound(amount, 0, uint256(maxDscToMint));
-if (amount == 0) {
-    return;
-}
-
-vm.startPrank(msg.sender);
-dsc.mint(msg.sender, amount);
-vm.stopPrank();
-
-
-}
-
-
-
-
-    function depositCollateral( uint256 collateralSeed, uint256 amountCollateral) public {
-        ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
-amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
-
-
-
-vm.startPrank(msg.sender);
-collateralToken.mint(msg.sender, amountCollateral);
-collateralToken.approve(address(dsce), amountCollateral);
-        dsce.depositCollateral(address(collateralToken), amountCollateral);
+        amount = bound(amount, 0, uint256(maxDscToMint));
+        if (amount == 0) {
+            return;
+        }
+        vm.startPrank(sender);
+        dsce.mintDsc(amount);
         vm.stopPrank();
+
+        timesMintIsCalled++;
     }
 
+    function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
+        amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
+
+        vm.startPrank(msg.sender);
+        collateralToken.mint(msg.sender, amountCollateral);
+        collateralToken.approve(address(dsce), amountCollateral);
+        dsce.depositCollateral(address(collateralToken), amountCollateral);
+        vm.stopPrank();
+        usersWithCollateralDeposited.push(msg.sender);
+    }
 
     function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateralToken = _getCollateralFromSeed(collateralSeed);
         uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateralToken), msg.sender);
         amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
-if (amountCollateral == 0) {
-    return;
-}
+        if (amountCollateral == 0) {
+            return;
+        }
         dsce.redeemCollateral(address(collateralToken), amountCollateral);
-
-
-
     }
 
-      
-
-
-
-    
-
     function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
-
         if (collateralSeed % 2 == 0) {
             return weth;
         }
