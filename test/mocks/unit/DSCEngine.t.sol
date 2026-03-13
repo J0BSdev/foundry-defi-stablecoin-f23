@@ -8,7 +8,7 @@ import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol"
 import {DSCEngine} from "../../../src/DSCEngine.sol";
 import {HelperConfig} from "../../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.t.sol";
+import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
 
 contract DSCEngineTest is Test {
     DecentralizedStableCoin public dsc;
