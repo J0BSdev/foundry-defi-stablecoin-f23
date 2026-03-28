@@ -113,17 +113,27 @@ contract DSCEngine is ReentrancyGuard {
     /// @param priceFeedAddresses Chainlink `AggregatorV3Interface` per token (same length as `tokenAddresses`).
     /// @param dscAddress Deployed `DecentralizedStableCoin` contract (engine should be set as owner/minter).
 
-    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
+
+
+
+               //lista svih allowed tokena,za iteraciju (npr. total collateral), lista svih Chainlink price feedova, adresa tvog stablecoin kontrakta
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {//constructor se izvrava samo jednom,pri deploymentu kontrakta
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+            //CHECK: svaki token mora imati price feed,a price feed mora biti validan(chainlink)
         }
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+            //EFFECTS: povezuje token s odgovarajucim Chainlink feedom
+
             s_collateralTokens.push(tokenAddresses[i]);
+            //EFFECTS: sprema sve allowed collateral tokene u array za kasniju iteraciju
+            
         }
 
         i_dsc = DecentralizedStableCoin(dscAddress);
+        //EFFECTS : sprema adresu DSC kontrakta u immutable varijablu i_dsc
     }
 
     /// @notice Burns DSC from the caller then redeems collateral. Restores a safe health factor if positions were overcollateralized.
