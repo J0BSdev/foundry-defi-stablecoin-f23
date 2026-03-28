@@ -82,9 +82,10 @@ contract DSCEngine is ReentrancyGuard {
         uint256 amountCollateral,
         uint256 amountDscToMint
     ) external {
-        depositCollateral(tokenCollateralAddress, amountCollateral); //prvo deponiramo collaterala
-
-        mintDsc(amountDscToMint); //zatim mintamo DSC
+        depositCollateral(tokenCollateralAddress, amountCollateral); 
+        //prvo deponiramo collaterala
+        mintDsc(amountDscToMint); 
+        //zatim mintamo DSC
     }
 
     /// @notice Deposits collateral into the engine without minting DSC.
@@ -97,9 +98,11 @@ contract DSCEngine is ReentrancyGuard {
         nonReentrant ///blokira reentrancy napad na ovu funkciju
 
     {
-        s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral; //povecava zapis koliko je user isplatio tog tokena(EFFECTS)
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+         //povecava zapis koliko je user isplatio tog tokena(EFFECTS)
 
-        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral); //emitira log da se dogodio deposit,za frontend i indexing,audit trail
+        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral); 
+        //emitira log da se dogodio deposit,za frontend i indexing,audit trail
         bool success = IERC20(tokenCollateralAddress).transferFrom(msg.sender, address(this), amountCollateral); //transferira tokena sa user accounta na DSCEngine kontrakt,
         if (!success) {
             //transferFrom osigurava da je kontrakt stvarno dobio tokene(INTERACTION)
@@ -123,9 +126,7 @@ contract DSCEngine is ReentrancyGuard {
 
         for (uint256 i = 0; // prolazi kroz svaki pair od token i price feed i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i]; // i = brojac(index),(koji broj u listi trenutno gleda)
-
             //EFFECTS: povezuje token s odgovarajucim Chainlink feedom
-
             s_collateralTokens.push(tokenAddresses[i]);
             //EFFECTS: sprema sve allowed collateral tokene u array za kasniju iteraciju
         }
@@ -329,7 +330,7 @@ contract DSCEngine is ReentrancyGuard {
             //LOOP: prolazi kroz sve allowed collateral tokene
             address token = s_collateralTokens[i];
             //READ: uzima adresu tokena na indexu i
-            uint256 amount = s_collateralDeposited[user][token];
+            uint256 amount = s_collateralDeposited[user][token];                                    // prodi sve tokene --> izracunaj vrijednost --> zbroji ukupno //
             //READ: koliko user ima tog tokena
             totalCollateralValueInUSD += getUsdValue(token, amount);
             //CALCULATION: pretvara taj token u USD i zbraja ukupno
@@ -344,8 +345,11 @@ contract DSCEngine is ReentrancyGuard {
     /// @return USD value scaled by 1e18.
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.staleCheckLastestData();
+        //READ: uzima Chainlink oracle za taj token
+        (, int256 price,,,) = priceFeed.staleCheckLastestData();                                        // token amount --> USD vrijednost //
+        //READ: dohvaca cijenu (npr. 2000$)
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+        //CALCULATION: pretvara amunt tokena u USD (npr. 0.0005 ETH --> 1000$)
     }
 
     /// @notice Returns DSC debt and total collateral value in USD for `user`.
@@ -357,13 +361,16 @@ contract DSCEngine is ReentrancyGuard {
         view
         returns (uint256 totalDscMinted, uint256 collateralValueInUSD)
     {
-        (totalDscMinted, collateralValueInUSD) = _getAccountInformation(user);
+        (totalDscMinted, collateralValueInUSD) = _getAccountInformation(user);                          // koliko duguje + koliko ima collaterala //
+        // WRAPPER: samo vraca podatke iz interne funkcije
+
     }
 
     /// @notice All collateral token addresses registered at deployment.
     /// @return List of supported collateral ERC-20 addresses.
     function getCollateralTokens() external view returns (address[] memory) {
         return s_collateralTokens;
+        //RETURN: vraca sve allowed collateral tokene
     }
 
     /// @notice Deposited balance of `token` for `user`.
@@ -372,6 +379,7 @@ contract DSCEngine is ReentrancyGuard {
     /// @return Deposited amount in token native units.
     function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
         return s_collateralDeposited[user][token];
+        //STORAGE READ: vraca koliko user ima tog tokena
     }
 
     /// @notice Chainlink aggregator used for `token`, or zero if not supported.
@@ -379,5 +387,6 @@ contract DSCEngine is ReentrancyGuard {
     /// @return Price feed contract address.
     function getCollateralTokenPriceFeed(address token) external view returns (address) {
         return s_priceFeeds[token];
+        //STORAGE READ: vraca price feed za taj token
     }
 }
