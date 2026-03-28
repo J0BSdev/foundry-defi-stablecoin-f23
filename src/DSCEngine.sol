@@ -47,7 +47,7 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => uint256 amountDscMinted) private s_DscMinted; //koliko je user duzan(mintao DSC),za health factor
     address[] private s_collateralTokens; //lista svih allowed tokena,za iteraciju (npr. total collateral)
 
-    DecentralizedStableCoin private immutable i_dsc; //reference na DSC token,immutable = gas optimizacija i sigurnije
+    DecentralizedStableCoin private immutable i_dsc; //reference na DSC token,immutable =, postavi se jednom i vise ne mijenja,u bytecode, gas optimizacija i sigurnije
 
     /// @notice Emitted when a user deposits collateral.
     event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount); //logira deposit,za frontend i indexing
@@ -181,7 +181,7 @@ contract DSCEngine is ReentrancyGuard {
         //EFFECTS : povecava userov dug prije health factor checka
         _revertIfHealthFactorIsBroken(msg.sender);
         //CHECK: nakon novog duga user mora ostati iznad min health factora
-        bool minted = i_dsc.mint(msg.sender, amountDscToMint);
+        bool minted = i_dsc.mint(msg.sender, amountDscToMint);// boll je true ili false , da ili ne,da li je mintanje uspjesno ili ne
         //INTERACTION: mintanje DSC token korisniku
         if (!minted) {
             revert DSCEngine__MintFailed();
@@ -194,7 +194,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
         _burnDsc(amount, msg.sender, msg.sender);
-        //EFFECTS + INTERSCTION: spaljuje DSC i smanjuje debt usera
+        //EFFECTS + INTERACTION: spaljuje DSC i smanjuje debt usera
         _revertIfHealthFactorIsBroken(msg.sender);
         // POST-CHECK: osigurava da je user i dalje dovoljno overcollateralized(health factor je ok)
     }
@@ -207,26 +207,39 @@ contract DSCEngine is ReentrancyGuard {
 
     function liquidate(address collateral, address user, uint256 debtToCover)
         external
-        moreThanZero(debtToCover)
-        nonReentrant
-        isAllowedToken(collateral)
+        moreThanZero(debtToCover)/// modifier, dug koji pokrivas mora biti > 0 (CHECK)
+        nonReentrant ///blokira reentrancy napad na ovu funkciju
+        isAllowedToken(collateral) ///modifier, collateral mora biti allowed token (CHECK)
     {
         uint256 startinUserHealthFactor = _healthFactor(user);
+        //CHECK: uzima trenutni health factor usera prije likvidacije
         if (startinUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__HealthFactorOk();
+            //CHECK: user je jos uvijek safe, NE smije se likvidirati
         }
 
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
+        //CALCULATION: koliko collateral tokena vrijedi ovaj debt u USD
+
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+        //CALCULATION: dodatni bonus za likvidatora (npr. +10%)
 
         _redeemCollateral(user, msg.sender, collateral, tokenAmountFromDebtCovered + bonusCollateral);
+        //EFFECT + INTERACTION: uzima collateral od user-a i salje likvidatoru
+
         _burnDsc(debtToCover, user, msg.sender);
+        //EFFECT + INTERACTION:likvidator placa DSC --> userov dug se smanjuje
+        
 
         uint256 endingUserHealthFactor = _healthFactor(user);
+        //CHECK: novi health factor nakon likvidacije
         if (endingUserHealthFactor <= startinUserHealthFactor) {
             revert DSCEngine__HealthFactorNotImproved();
+            //CHECK: likvidcija mora poboljsati stanje usera
         }
         _revertIfHealthFactorIsBroken(msg.sender);
+         //FINAL - CHECK: likvidator ne smije zavrsiti u losem stanju
+
     }
 
     /// @dev Returns total DSC minted to `user` and total collateral value in USD (18-decimal USD wei).
@@ -236,7 +249,9 @@ contract DSCEngine is ReentrancyGuard {
         returns (uint256 totalDscMinted, uint256 collateralValueInUSD)
     {
         totalDscMinted = s_DscMinted[user];
+        //CALCULATION: koliko DSC user duguje
         collateralValueInUSD = getAccountCollateralValue(user);
+        //CALCULATION: ukupna vrijednost collaterala usera u USD
     }
 
     /// @dev Health factor = (collateral USD * threshold / 100) * 1e18 / minted DSC. Returns `type(uint256).max` if no debt.
