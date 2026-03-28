@@ -205,7 +205,7 @@ contract DSCEngine is ReentrancyGuard {
     /// @param user Account to liquidate.
     /// @param debtToCover DSC debt to cover (bounded by the user's minted amount in practice).
 
-    function liquidate(address collateral, address user, uint256 debtToCover)
+    function liquidate(address collateral, address user, uint256 debtToCover) /// likvidator vraca tudi dug --> dobiva njihov collateral + bonus
         external
         moreThanZero(debtToCover)/// modifier, dug koji pokrivas mora biti > 0 (CHECK)
         nonReentrant ///blokira reentrancy napad na ovu funkciju
@@ -257,27 +257,39 @@ contract DSCEngine is ReentrancyGuard {
     /// @dev Health factor = (collateral USD * threshold / 100) * 1e18 / minted DSC. Returns `type(uint256).max` if no debt.
     function _healthFactor(address user) private view returns (uint256) {
         (uint256 totalDscMinted, uint256 collateralValueInUSD) = _getAccountInformation(user);
+        //READ: uzima debt + collateral vrijednost
         if (totalDscMinted == 0) return type(uint256).max;
+        //EDGE CASE: ako nema duga --> uvijek safe(infinite health), da nebi doslo do dijeljenja s 0
+
         uint256 collateralAdjustedForThreshold = (collateralValueInUSD * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
-        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+        //CALCULATION: smanjuje collateral (npr. 80%) za sigurnosni buffer
+
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;  
+        //FINAL CALCULATION: health factor = collateral / debt
     }
 
     /// @dev Reverts if `_healthFactor(user) < MIN_HEALTH_FACTOR` (1e18).
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = _healthFactor(user);
+        //READ: racuna health factor usera
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+            //CHECK: ako user padne ispod min --> revert(rollback svega)
         }
     }
 
     /// @dev Pulls DSC from `dscfrom`, reduces `onBehalfOf` debt, and burns tokens held by this contract.
     function _burnDsc(uint256 amountDscToBurn, address onBehalfOf, address dscfrom) private {
         s_DscMinted[onBehalfOf] -= amountDscToBurn;
+        //EFFECTS: smanjuje debt usera u storage-u
         bool success = i_dsc.transferFrom(dscfrom, address(this), amountDscToBurn);
+        //INTERACTION: transferira DSC od korisnika (ili likvidatora)na DSCEngine kontrakt
         if (!success) {
             revert DSCEngine__TransferFailed();
+            //CHECK: mora uspjeti transfer,inace rollback 
         }
         i_dsc.burn(amountDscToBurn);
+        //INTERACTION: spaljuje DSC --> smanjuje ukupni supply
     }
 
     /// @dev Updates storage and sends `amountCollateral` of `tokenCollateralAddress` from `from` to `to`.
