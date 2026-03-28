@@ -113,24 +113,21 @@ contract DSCEngine is ReentrancyGuard {
     /// @param priceFeedAddresses Chainlink `AggregatorV3Interface` per token (same length as `tokenAddresses`).
     /// @param dscAddress Deployed `DecentralizedStableCoin` contract (engine should be set as owner/minter).
 
-
-
-
-               //lista svih allowed tokena,za iteraciju (npr. total collateral), lista svih Chainlink price feedova, adresa tvog stablecoin kontrakta
-    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) { //constructor se izvrava samo jednom,pri deploymentu kontrakta
+    //lista svih allowed tokena,za iteraciju (npr. total collateral), lista svih Chainlink price feedova, adresa tvog stablecoin kontrakta
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
+        //constructor se izvrava samo jednom,pri deploymentu kontrakta
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
             //CHECK: svaki token mora imati price feed,a price feed mora biti validan(chainlink)
         }
 
-        for (uint256 i = 0; i < tokenAddresses.length; i++) { // prolazi kroz svaki pair od token i price feed
+        for (uint256 i = 0; // prolazi kroz svaki pair od token i price feed i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i]; // i = brojac(index),(koji broj u listi trenutno gleda)
 
             //EFFECTS: povezuje token s odgovarajucim Chainlink feedom
 
             s_collateralTokens.push(tokenAddresses[i]);
             //EFFECTS: sprema sve allowed collateral tokene u array za kasniju iteraciju
-            
         }
 
         i_dsc = DecentralizedStableCoin(dscAddress);
@@ -144,8 +141,10 @@ contract DSCEngine is ReentrancyGuard {
 
     function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
         external
-        moreThanZero(amountCollateral)///modifier (CHECK)
-        isAllowedToken(tokenCollateralAddress)///modifier (CHECK)
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress) ///modifier (CHECK)
+        ///modifier (CHECK)
+
     {
         _burnDsc(amountDscToBurn, msg.sender, msg.sender);
         //EFFECTS + INTERACTION: smanjuje debt i burna DSC korisnika
@@ -161,16 +160,17 @@ contract DSCEngine is ReentrancyGuard {
     /// @param amountCollateral Amount of collateral to redeem.
 
     function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
-        external 
+        external
         moreThanZero(amountCollateral) ///modifier (CHECK)
         nonReentrant ///blokira reentrancy napad na ovu funkciju
         isAllowedToken(tokenCollateralAddress) ///modifier (CHECK)
-    {
-                           //1. msg.sender = od koga se collateral skida , 2. msg.sender = kome se collateral salje
-        _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
-         ///EFFECTS + INTERACTION: smanjuje collateral u stateu i vraca tokene korisniku
 
-        _revertIfHealthFactorIsBroken(msg.sender); 
+    {
+        //1. msg.sender = od koga se collateral skida , 2. msg.sender = kome se collateral salje
+        _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
+        ///EFFECTS + INTERACTION: smanjuje collateral u stateu i vraca tokene korisniku
+
+        _revertIfHealthFactorIsBroken(msg.sender);
         ///POST-CHECK: osigurava da korisnik nakoj svega ostaje solventan(health factor je ok)
     }
 
@@ -181,7 +181,7 @@ contract DSCEngine is ReentrancyGuard {
         //EFFECTS : povecava userov dug prije health factor checka
         _revertIfHealthFactorIsBroken(msg.sender);
         //CHECK: nakon novog duga user mora ostati iznad min health factora
-        bool minted = i_dsc.mint(msg.sender, amountDscToMint);// boll je true ili false , da ili ne,da li je mintanje uspjesno ili ne
+        bool minted = i_dsc.mint(msg.sender, amountDscToMint); // boll je true ili false , da ili ne,da li je mintanje uspjesno ili ne
         //INTERACTION: mintanje DSC token korisniku
         if (!minted) {
             revert DSCEngine__MintFailed();
@@ -207,9 +207,10 @@ contract DSCEngine is ReentrancyGuard {
 
     function liquidate(address collateral, address user, uint256 debtToCover) /// likvidator vraca tudi dug --> dobiva njihov collateral + bonus
         external
-        moreThanZero(debtToCover)/// modifier, dug koji pokrivas mora biti > 0 (CHECK)
+        moreThanZero(debtToCover) /// modifier, dug koji pokrivas mora biti > 0 (CHECK)
         nonReentrant ///blokira reentrancy napad na ovu funkciju
         isAllowedToken(collateral) ///modifier, collateral mora biti allowed token (CHECK)
+
     {
         uint256 startinUserHealthFactor = _healthFactor(user);
         //CHECK: uzima trenutni health factor usera prije likvidacije
@@ -229,7 +230,6 @@ contract DSCEngine is ReentrancyGuard {
 
         _burnDsc(debtToCover, user, msg.sender);
         //EFFECT + INTERACTION:likvidator placa DSC --> userov dug se smanjuje
-        
 
         uint256 endingUserHealthFactor = _healthFactor(user);
         //CHECK: novi health factor nakon likvidacije
@@ -238,8 +238,7 @@ contract DSCEngine is ReentrancyGuard {
             //CHECK: likvidcija mora poboljsati stanje usera
         }
         _revertIfHealthFactorIsBroken(msg.sender);
-         //FINAL - CHECK: likvidator ne smije zavrsiti u losem stanju
-
+        //FINAL - CHECK: likvidator ne smije zavrsiti u losem stanju
     }
 
     /// @dev Returns total DSC minted to `user` and total collateral value in USD (18-decimal USD wei).
@@ -264,7 +263,7 @@ contract DSCEngine is ReentrancyGuard {
         uint256 collateralAdjustedForThreshold = (collateralValueInUSD * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         //CALCULATION: smanjuje collateral (npr. 80%) za sigurnosni buffer
 
-        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;  
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
         //FINAL CALCULATION: health factor = collateral / debt
     }
 
@@ -283,10 +282,10 @@ contract DSCEngine is ReentrancyGuard {
         s_DscMinted[onBehalfOf] -= amountDscToBurn;
         //EFFECTS: smanjuje debt usera u storage-u
         bool success = i_dsc.transferFrom(dscfrom, address(this), amountDscToBurn);
-        //INTERACTION: transferira DSC od korisnika (ili likvidatora)na DSCEngine kontrakt
+        //INTERACTION: transferira DSC od korisnika (ili likvidatora)na DSCEngine kontrakt                       // uzima DSC --> smanjuje dug --> unistava token //
         if (!success) {
             revert DSCEngine__TransferFailed();
-            //CHECK: mora uspjeti transfer,inace rollback 
+            //CHECK: mora uspjeti transfer,inace rollback
         }
         i_dsc.burn(amountDscToBurn);
         //INTERACTION: spaljuje DSC --> smanjuje ukupni supply
@@ -297,10 +296,14 @@ contract DSCEngine is ReentrancyGuard {
         private
     {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
+        //EFFECTS: smanjuje collateral usera u storage-u
         emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
-        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
+        //LOG: emitira log da se dogodio redeem,za frontend i indexing,audit trail
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral); // smanji zapis --> posalji token //
+        //INTERACTION: salje token iz kontrakta korisniku
         if (!success) {
             revert DSCEngine__TransferFailed();
+            //CHECK: mora uspjeti transfer,inace rollback
         }
     }
 
@@ -310,8 +313,12 @@ contract DSCEngine is ReentrancyGuard {
     /// @return Amount of `token` in its native decimals.
     function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        //READ: uzima price feed za token (npr. ETH/USD)
         (, int256 price,,,) = priceFeed.latestRoundData();
+        //READ: dohvaca cijenu iz Chainlinka (npr. 2000$)
         return ((usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION));
+        //CALCULATION:
+        // pretvara USD --> koliko tokena to vrijedi (npr. 1000$ --> 0.0005 ETH)
     }
 
     /// @notice Sums USD value of all collateral types deposited by `user`.
@@ -319,11 +326,16 @@ contract DSCEngine is ReentrancyGuard {
     /// @return totalCollateralValueInUSD Total collateral in USD wei (18 decimals).
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUSD) {
         for (uint256 i = 0; i < s_collateralTokens.length; i++) {
+            //LOOP: prolazi kroz sve allowed collateral tokene
             address token = s_collateralTokens[i];
+            //READ: uzima adresu tokena na indexu i
             uint256 amount = s_collateralDeposited[user][token];
+            //READ: koliko user ima tog tokena
             totalCollateralValueInUSD += getUsdValue(token, amount);
+            //CALCULATION: pretvara taj token u USD i zbraja ukupno
         }
         return totalCollateralValueInUSD;
+        //RETURN: ukupna vrijednost collaterala usera u USD
     }
 
     /// @notice USD value of `amount` of `token` using stale-checked oracle data.
