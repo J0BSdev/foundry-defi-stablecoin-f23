@@ -117,14 +117,15 @@ contract DSCEngine is ReentrancyGuard {
 
 
                //lista svih allowed tokena,za iteraciju (npr. total collateral), lista svih Chainlink price feedova, adresa tvog stablecoin kontrakta
-    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {//constructor se izvrava samo jednom,pri deploymentu kontrakta
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) { //constructor se izvrava samo jednom,pri deploymentu kontrakta
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
             //CHECK: svaki token mora imati price feed,a price feed mora biti validan(chainlink)
         }
 
-        for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+        for (uint256 i = 0; i < tokenAddresses.length; i++) { // prolazi kroz svaki pair od token i price feed
+            s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i]; // i = brojac(index),(koji broj u listi trenutno gleda)
+
             //EFFECTS: povezuje token s odgovarajucim Chainlink feedom
 
             s_collateralTokens.push(tokenAddresses[i]);
@@ -143,12 +144,15 @@ contract DSCEngine is ReentrancyGuard {
 
     function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
         external
-        moreThanZero(amountCollateral)
-        isAllowedToken(tokenCollateralAddress)
+        moreThanZero(amountCollateral)///modifier (CHECK)
+        isAllowedToken(tokenCollateralAddress)///modifier (CHECK)
     {
         _burnDsc(amountDscToBurn, msg.sender, msg.sender);
+        //EFFECTS + INTERACTION: smanjuje debt i burna DSC korisnika
         _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
+        //EFFECTS + INTERACTION: smanjuje collateral u stateu i vraca tokene korisniku
         _revertIfHealthFactorIsBroken(msg.sender);
+        //POST-CHECK: osigurava da je user i dalje dovoljno overcollateralized(health factor je ok)
     }
 
     /// @notice Redeems collateral to the caller without burning DSC in this call.
@@ -157,23 +161,31 @@ contract DSCEngine is ReentrancyGuard {
     /// @param amountCollateral Amount of collateral to redeem.
 
     function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
-        external
-        moreThanZero(amountCollateral)
-        nonReentrant
-        isAllowedToken(tokenCollateralAddress)
+        external 
+        moreThanZero(amountCollateral) ///modifier (CHECK)
+        nonReentrant ///blokira reentrancy napad na ovu funkciju
+        isAllowedToken(tokenCollateralAddress) ///modifier (CHECK)
     {
+                           //1. msg.sender = od koga se collateral skida , 2. msg.sender = kome se collateral salje
         _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
-        _revertIfHealthFactorIsBroken(msg.sender);
+         ///EFFECTS + INTERACTION: smanjuje collateral u stateu i vraca tokene korisniku
+
+        _revertIfHealthFactorIsBroken(msg.sender); 
+        ///POST-CHECK: osigurava da korisnik nakoj svega ostaje solventan(health factor je ok)
     }
 
     /// @notice Mints DSC to the caller against their existing collateral.
     /// @param amountDscToMint DSC to mint (wei, 18 decimals). Must not push the account below the minimum health factor.
     function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
         s_DscMinted[msg.sender] += amountDscToMint;
+        //EFFECTS : povecava userov dug prije health factor checka
         _revertIfHealthFactorIsBroken(msg.sender);
+        //CHECK: nakon novog duga user mora ostati iznad min health factora
         bool minted = i_dsc.mint(msg.sender, amountDscToMint);
+        //INTERACTION: mintanje DSC token korisniku
         if (!minted) {
             revert DSCEngine__MintFailed();
+            //SAFETY: revertamo ako mintanje ne uspije(ERROR,post-interaction validation)
         }
     }
 
@@ -182,7 +194,9 @@ contract DSCEngine is ReentrancyGuard {
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
         _burnDsc(amount, msg.sender, msg.sender);
+        //EFFECTS + INTERSCTION: spaljuje DSC i smanjuje debt usera
         _revertIfHealthFactorIsBroken(msg.sender);
+        // POST-CHECK: osigurava da je user i dalje dovoljno overcollateralized(health factor je ok)
     }
 
     /// @notice Liquidates an undercollateralized position: burns the liquidator's DSC to cover debt and seizes collateral plus a bonus.
