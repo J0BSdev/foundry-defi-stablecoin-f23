@@ -43,7 +43,6 @@ contract ExerciseTwo {
         }
         uint256 amount = claimable[msg.sender];
         claimable[msg.sender] = 0;
-        token.transfer(msg.sender, amount);
         if (!token.transfer(msg.sender, amount)) {
             revert ExerciseTwo__TransferFailed();
         }
