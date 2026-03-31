@@ -94,7 +94,7 @@ contract DSCEngine is ReentrancyGuard {
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral) ///koji collateral token user deponira,i koliko tog tokena user deponira
         public
         moreThanZero(amountCollateral) /// provjerava da amountCollateral !=0 (CHECK)
-        isAllowedToken(tokenCollateralAddress) ///provjerava da je token whitelistan i ima price feed 
+        isAllowedToken(tokenCollateralAddress) ///provjerava da je token whitelistan i ima price feed (CHECK)
         nonReentrant ///blokira reentrancy napad na ovu funkciju
 
     {
