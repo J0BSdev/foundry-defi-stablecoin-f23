@@ -119,7 +119,7 @@ contract DSCEngine is ReentrancyGuard {
     //lista svih allowed tokena,za iteraciju (npr. total collateral), lista svih Chainlink price feedova, adresa tvog stablecoin kontrakta
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         //constructor se izvrava samo jednom,pri deploymentu kontrakta
-        if (tokenAddresses.length != priceFeedAddresses.length) {
+        if (tokenAddresses.length != priceFeedAddresses.length) 
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
             //CHECK: svaki token mora imati price feed,a price feed mora biti validan(chainlink)
         }
