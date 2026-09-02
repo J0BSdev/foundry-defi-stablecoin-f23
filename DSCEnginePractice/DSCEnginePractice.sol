@@ -2,17 +2,23 @@
 
 pragma solidity ^0.8.20;
 
-import {ERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {DecentralizedStableCoin} from " ./DecentralizedStableCoin.sol";
+import{IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-contract DSCEnginePractice is ERC20{
 
-error DSC__EngineNeedsMoreThanZero(); 
+error DSC__EngineNeedsMoreThanZero();
 
+
+contract DSCEnginePractice {
+
+    IERC20 public weth;
+    DecentralizedStableCoin public dsc;
 
     mapping(address => uint256) public collateralDeposited;
     mapping(address => uint256) public debtMInted;
 
-    constructor()ERC20("DSCEngine" , "DSC"){}
+    
+
 
     function depositCollateral(uint256 amount)external{ 
          if (amount == 0 )
@@ -24,11 +30,4 @@ error DSC__EngineNeedsMoreThanZero();
         //we have to confirm users deposit
      
     }
-    
-    
-        
-
-
-    }
-
-    
+}
