@@ -26,7 +26,9 @@ contract DSCEnginePractice {
          if (amount == 0 )
        revert DSC__EngineNeedsMoreThanZero();
 
-        bool success =IERC20(msg.sender,dscAddress,)
+        bool success =weth.transferFrom(msg.sender,address(this), amount);
+        
+
         
 
        //we have to transfer collateral from user to protocol
