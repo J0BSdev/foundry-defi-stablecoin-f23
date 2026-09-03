@@ -21,7 +21,9 @@ contract DSCEnginePractice {
     AggregatorV3Interface public priceFeed;
 
 
-uint256 privatr
+uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+uint256 private constant PRECISION = 1e18;
+
 
 
     mapping(address => uint256) public collateralDeposited;
@@ -67,15 +69,16 @@ uint256 privatr
 
 
 
-            function getUsdValue(uint256 amount)public view returns{
+            function getUsdValue(uint256 amount)public view returns(uint256){
 
-           (, int256 answer , , ,) = priceFeed.latestRoundData();
+           (, int256 price , , ,) = priceFeed.latestRoundData();
 
            return (uint256 (price) * ADDITIONAL_FEED_PRECISION * amount) / PRECISION;
-
-
+                      //2000 * 1e8         1e10                   1000e18     1e18
+                     
 
 
 
             }
+              
 }
