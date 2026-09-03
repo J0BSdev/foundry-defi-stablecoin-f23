@@ -8,6 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error DSC__EngineNeedsMoreThanZero();
 error Transfer__Failed();
+error Mint__Failed();
 
 
 contract DSCEnginePractice {
@@ -16,8 +17,7 @@ contract DSCEnginePractice {
     DecentralizedStableCoin public dsc;
 
     mapping(address => uint256) public collateralDeposited;
-    mapping(address => uint256) public debtMinted;
-    mapping(address user => uint256 amountDscToMint ) public dscMinted; 
+    mapping(address => uint256) public debtMinted; 
 
     constructor(address tokenAddress , address dscAddress){
     weth = IERC20(tokenAddress);
@@ -39,17 +39,18 @@ contract DSCEnginePractice {
     }
 
         function mintDsc(uint256 amountDscToMint)public{
-            if (amountDscToMint == 0) {
+            if (amountDscToMint == 0 ){
                 revert DSC__EngineNeedsMoreThanZero();
             }
+            
+            debtMinted[msg.sender] += amountDscToMint;
+    
+            bool success = dsc.mint(msg.sender,amountDscToMint);
+            if (!success){
 
-            bool success = dsc.transferFrom(address(this), msg.sender,amountDscToMint);
+            revert Mint__Failed();
 
-            if(!success){
-                revert Transfer__Failed();
                 }
 
-                dscMinted[msg.sender] += amountDscToMint;
-        
             }
 }
