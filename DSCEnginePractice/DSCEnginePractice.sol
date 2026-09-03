@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 
 error DSC__EngineNeedsMoreThanZero();
@@ -11,17 +12,25 @@ error Transfer__Failed();
 error Mint__Failed();
 
 
+
+
 contract DSCEnginePractice {
 
     IERC20 public weth;
     DecentralizedStableCoin public dsc;
+    AggregatorV3Interface public priceFeed;
+
+
+uint256 privatr
+
 
     mapping(address => uint256) public collateralDeposited;
     mapping(address => uint256) public debtMinted; 
 
-    constructor(address tokenAddress , address dscAddress){
+    constructor(address tokenAddress , address dscAddress, address priceFeedAddress ){
     weth = IERC20(tokenAddress);
     dsc = DecentralizedStableCoin(dscAddress);
+    priceFeed = AggregatorV3Interface(priceFeedAddress);
 }
 
     function depositCollateral(uint256 amount)external{ 
@@ -38,7 +47,7 @@ contract DSCEnginePractice {
         //we have to confirm users deposit
     }
 
-    
+
 
         function mintDsc(uint256 amountDscToMint)public{
             if (amountDscToMint == 0 ){
@@ -58,5 +67,15 @@ contract DSCEnginePractice {
 
 
 
+            function getUsdValue(uint256 amount)public view returns{
 
+           (, int256 answer , , ,) = priceFeed.latestRoundData();
+
+           return (uint256 (price) * ADDITIONAL_FEED_PRECISION * amount) / PRECISION;
+
+
+
+
+
+            }
 }
