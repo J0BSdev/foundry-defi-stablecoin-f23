@@ -17,6 +17,7 @@ contract DSCEnginePractice {
 
     mapping(address => uint256) public collateralDeposited;
     mapping(address => uint256) public debtMinted;
+    mapping(address user => uint256 amountDscToMint ) public dscMinted; 
 
     constructor(address tokenAddress , address dscAddress){
     weth = IERC20(tokenAddress);
@@ -24,16 +25,41 @@ contract DSCEnginePractice {
 }
 
     function depositCollateral(uint256 amount)external{ 
-         if (amount == 0 )
+         if (amount == 0 ){
        revert DSC__EngineNeedsMoreThanZero();
-       
-        bool success =weth.transferFrom(msg.sender,address(this), amount);
+         }
+        bool success = weth.transferFrom(msg.sender,address(this), amount);
         if (! success )
-        revert Transfer__Failed();
+        {
+    revert Transfer__Failed();}
 
        //we have to transfer collateral from user to protocol
         collateralDeposited[msg.sender]+= amount;
         //we have to confirm users deposit
-     
     }
+
+        function mintDsc(uint256 amountDscToMint)public{
+            if (amount == 0) {
+                revert DSC__EngineNeedsMoreThanZero();
+            }
+
+            bool success = dsc.transferFrom(address(this), msg.sender,amount);
+
+            if(!success)
+
+          dscMinted[msg.sender] += amount;
+
+
+
+
+
+
+
+
+
+            }
+        }
+
+     
+}
 }
