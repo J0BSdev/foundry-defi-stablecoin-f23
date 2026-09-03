@@ -38,6 +38,8 @@ contract DSCEnginePractice {
         //we have to confirm users deposit
     }
 
+    
+
         function mintDsc(uint256 amountDscToMint)public{
             if (amountDscToMint == 0 ){
                 revert DSC__EngineNeedsMoreThanZero();
@@ -53,4 +55,8 @@ contract DSCEnginePractice {
                 }
 
             }
+
+
+
+
 }
