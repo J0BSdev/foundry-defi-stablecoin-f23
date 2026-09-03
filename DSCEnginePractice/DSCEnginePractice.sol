@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 error DSC__EngineNeedsMoreThanZero();
+error Transfer__Failed();
 
 
 contract DSCEnginePractice {
@@ -25,11 +26,10 @@ contract DSCEnginePractice {
     function depositCollateral(uint256 amount)external{ 
          if (amount == 0 )
        revert DSC__EngineNeedsMoreThanZero();
-
+       
         bool success =weth.transferFrom(msg.sender,address(this), amount);
-        
-
-        
+        if (! success )
+        revert Transfer__Failed();
 
        //we have to transfer collateral from user to protocol
         collateralDeposited[msg.sender]+= amount;
