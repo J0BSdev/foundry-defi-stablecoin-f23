@@ -39,27 +39,17 @@ contract DSCEnginePractice {
     }
 
         function mintDsc(uint256 amountDscToMint)public{
-            if (amount == 0) {
+            if (amountDscToMint == 0) {
                 revert DSC__EngineNeedsMoreThanZero();
             }
 
-            bool success = dsc.transferFrom(address(this), msg.sender,amount);
+            bool success = dsc.transferFrom(address(this), msg.sender,amountDscToMint);
 
-            if(!success)
+            if(!success){
+                revert Transfer__Failed();
+                }
 
-          dscMinted[msg.sender] += amount;
-
-
-
-
-
-
-
-
-
+                dscMinted[msg.sender] += amountDscToMint;
+        
             }
-        }
-
-     
-}
 }
